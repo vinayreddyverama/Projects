@@ -1,0 +1,32 @@
+#Time Series Analysis
+select month(receipt_purchased_date) as Purchase_month
+SUM(DOLLARS) AS Total_sales
+FROM sales_date
+WHERE receipt_purchased_date BETWEEN '2022-10-01' AND '2022-12-31'
+GROUP BY Purchase_month
+ORDER BY Purchase_month;
+
+
+#Customer Segmentation based on Total Purchase
+With CustomerPurchases as(
+    SELECT USER_ID, SUM(DOLLARS) AS Total_Purchases
+    FROM sales_date
+    GROUP BY USER_ID
+)
+SELECT USER_ID, Total_Purchases
+FROM CustomerPurchases
+WHERE Total_Purchases>=(SELECT PERCENTILE_CONT(0.9)
+WITHIN GROUP 
+(ORDER BY Total_Purchases) FROM CustomerPurchases);
+
+
+SELECT ITEM_BARCODE, COUNT(*) AS Total_Purchases
+SUM(DOLLARS) AS Total_sales
+FROM TableNames
+
+SELECT USER_ID, DATE_TRUNC('month', RECEIPT_PURCHASE_DATE) AS Purchase_Month,
+SUM(DOLLARS) AS Total_Purchases
+FROM TableName
+WHERE RECEIPT_PURCHASE_DATE>='2022-10-01' AND RECEIPT_PURCHASE_DATE<='2022-12-31'
+GROUP BY USER_ID, Purchase_Month
+ORDER BY USER_ID, Purchase_Month;

@@ -23,3 +23,8 @@ while guess_counter < chances:
 
     elif my_guess < number_to_guess:
         print('Your guess is lesser')
+        
+    
+    #Taking the boundaries conditions
+    elif guess_counter >= chances and my_guess != number_to_guess:
+        print(f'Oops sorry, The number is {number_to_guess} better luck next time')

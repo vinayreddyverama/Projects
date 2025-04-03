@@ -10,7 +10,7 @@ Shown are the stock **closing price** and ***volume*** of Google!
 """)
 
 # https://towardsdatascience.com/how-to-get-stock-data-using-python-c0de1df17e75
-#define the ticker symbol
+#define the ticker symbol to trigger the app
 tickerSymbol = 'GOOGL'
 #get data on this ticker
 tickerData = yf.Ticker(tickerSymbol)

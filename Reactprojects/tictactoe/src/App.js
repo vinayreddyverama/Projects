@@ -15,7 +15,7 @@ function App() {
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io('http://localhost:5001', {
+    const newSocket = io('http://localhost:5002', {
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
@@ -31,16 +31,16 @@ function App() {
       setGameId(data.game.gameId);
       setGameState(data.game);
       setPhase('waiting');
-      setStatus('Waiting for opponent...');
+      setStatus('Waiting for another player to join...');
     });
 
     newSocket.on('gameUpdate', (state) => {
       logger.info('Game state updated');
       setGameState(state);
       // Determine player symbol from socket ID
-      const mySymbol = state.players.X.id === newSocket.id ? 'X' : 'O';
+      const mySymbol = state.players.X?.id === newSocket.id ? 'X' : 'O';
       const oppSymbol = mySymbol === 'X' ? 'O' : 'X';
-      const oppName = state.players[oppSymbol].name;
+      const oppName = state.players[oppSymbol]?.name;
       updateStatus(state, mySymbol, oppName);
     });
 
@@ -67,6 +67,7 @@ function App() {
       logger.gameEnd(state.winner, state.winner === 'draw' ? 'draw' : 'win');
       setPhase('finished');
       setGameState(state);
+      updateStatus(state, playerSymbol, opponentName);
     });
 
     newSocket.on('opponentLeft', () => {
@@ -89,7 +90,8 @@ function App() {
       if (state.winner === 'draw') {
         setStatus("It's a Draw!");
       } else {
-        setStatus(state.winner === currentPlayerSymbol ? 'You won! 🎉' : 'You lost!');
+        const winnerName = state.players[state.winner]?.name || state.winner;
+        setStatus(state.winner === currentPlayerSymbol ? `You won! 🎉 (${winnerName})` : `Winner: ${winnerName}`);
       }
     } else {
       const opponentSymbol = currentPlayerSymbol === 'X' ? 'O' : 'X';
@@ -156,7 +158,7 @@ function App() {
         <div className="game-screen">
           <h1>⏳ Waiting</h1>
           <p className="loading-text">Player: <strong>{playerName}</strong> ({playerSymbol})</p>
-          <p className="loading-text">Waiting for opponent to join...</p>
+          <p className="loading-text">Waiting for another player to join...</p>
           <div className="spinner"></div>
         </div>
       </div>
@@ -176,6 +178,13 @@ function App() {
               <p className="player-name">You</p>
               <p className="player-label">{playerName}</p>
               <p className="player-symbol">{playerSymbol}</p>
+              <div className="player-stats" style={{ fontSize: '0.85rem', marginTop: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '6px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Stats</div>
+                <div>🏆 Wins: {gameState.players[playerSymbol]?.score?.wins || 0}</div>
+                <div>🤝 Draws: {gameState.players[playerSymbol]?.score?.draws || 0}</div>
+                <div>❌ Losses: {gameState.players[playerSymbol]?.score?.losses || 0}</div>
+                <div>🎮 Total: {gameState.players[playerSymbol]?.score?.total || 0}</div>
+              </div>
               <p className="player-turn">
                 {gameState.currentPlayer === playerSymbol ? '🔴' : '⚫'}
               </p>
@@ -185,6 +194,13 @@ function App() {
               <p className="player-name">Opponent</p>
               <p className="player-label">{opponentName}</p>
               <p className="player-symbol">{playerSymbol === 'X' ? 'O' : 'X'}</p>
+              <div className="player-stats" style={{ fontSize: '0.85rem', marginTop: '12px', padding: '8px', background: 'rgba(0,0,0,0.05)', borderRadius: '6px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Stats</div>
+                <div>🏆 Wins: {gameState.players[playerSymbol === 'X' ? 'O' : 'X']?.score?.wins || 0}</div>
+                <div>🤝 Draws: {gameState.players[playerSymbol === 'X' ? 'O' : 'X']?.score?.draws || 0}</div>
+                <div>❌ Losses: {gameState.players[playerSymbol === 'X' ? 'O' : 'X']?.score?.losses || 0}</div>
+                <div>🎮 Total: {gameState.players[playerSymbol === 'X' ? 'O' : 'X']?.score?.total || 0}</div>
+              </div>
               <p className="player-turn">
                 {gameState.currentPlayer !== playerSymbol ? '🔴' : '⚫'}
               </p>

@@ -15,7 +15,7 @@ function App() {
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io('http://localhost:5002', {
+    const newSocket = io('http://localhost:3000', {
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,

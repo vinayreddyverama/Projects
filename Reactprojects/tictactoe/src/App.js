@@ -15,7 +15,21 @@ function App() {
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io('http://localhost:3000', {
+    const updateStatus = (state, currentPlayerSymbol, oppName = '') => {
+      if (state.winner) {
+        if (state.winner === 'draw') {
+          setStatus("It's a Draw!");
+        } else {
+          const winnerName = state.players[state.winner]?.name || state.winner;
+          setStatus(state.winner === currentPlayerSymbol ? `You won! 🎉 (${winnerName})` : `Winner: ${winnerName}`);
+        }
+      } else {
+        const opponentSymbol = currentPlayerSymbol === 'X' ? 'O' : 'X';
+        setStatus(state.currentPlayer === currentPlayerSymbol ? 'Your turn' : `${oppName}'s turn (${opponentSymbol})`);
+      }
+    };
+
+    const newSocket = io('/', {
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1000,
@@ -67,7 +81,12 @@ function App() {
       logger.gameEnd(state.winner, state.winner === 'draw' ? 'draw' : 'win');
       setPhase('finished');
       setGameState(state);
-      updateStatus(state, playerSymbol, opponentName);
+      
+      // Determine player symbol and opponent name directly from the updated state and socket ID
+      const mySymbol = state.players.X?.id === newSocket.id ? 'X' : 'O';
+      const oppSymbol = mySymbol === 'X' ? 'O' : 'X';
+      const oppName = state.players[oppSymbol]?.name;
+      updateStatus(state, mySymbol, oppName);
     });
 
     newSocket.on('opponentLeft', () => {
@@ -84,20 +103,6 @@ function App() {
     setSocket(newSocket);
     return () => newSocket.disconnect();
   }, []);
-
-  const updateStatus = (state, currentPlayerSymbol, oppName = '') => {
-    if (state.winner) {
-      if (state.winner === 'draw') {
-        setStatus("It's a Draw!");
-      } else {
-        const winnerName = state.players[state.winner]?.name || state.winner;
-        setStatus(state.winner === currentPlayerSymbol ? `You won! 🎉 (${winnerName})` : `Winner: ${winnerName}`);
-      }
-    } else {
-      const opponentSymbol = currentPlayerSymbol === 'X' ? 'O' : 'X';
-      setStatus(state.currentPlayer === currentPlayerSymbol ? 'Your turn' : `${oppName}'s turn (${opponentSymbol})`);
-    }
-  };
 
   const handleNameSubmit = (e) => {
     e.preventDefault();

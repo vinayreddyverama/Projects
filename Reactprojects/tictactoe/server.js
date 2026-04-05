@@ -1,28 +1,17 @@
 const express = require('express');
 const http = require('http');
-const socketIO = require('socket.io');
+const { Server } = require('socket.io');
 const path = require('path');
 const logger = require('./src/logger');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server, {
+const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
-// server.js (handler for Lambda)
-app.get('/', (req, res) => res.send('Tic Tac Toe! <div id="board"></div><script>/* your JS */</script>'));
-
-exports.handler = async (event) => {
-  // Lambda proxy integration
-  const server = app.listen(0, () => {});
-  // ... proxy logic or use serverless-express lib
-  return { statusCode: 200, body: 'Tic Tac Toe live!' };
-};
-
 app.use(express.static(path.join(__dirname, 'build')));
 app.use(express.json());
-// ==================== AWS Lambda End ====================
 
 
 // Initialize socket events
@@ -33,7 +22,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5002;
 server.listen(PORT, () => {
   logger.success(`Server running on port ${PORT}`);
 });

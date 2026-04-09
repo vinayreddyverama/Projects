@@ -376,10 +376,7 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
             {chatMessages.map((msg, i) => (
               <div key={i} className={`chat-message ${msg.sender === playerSymbol ? 'self' : 'opponent'}`}>
                 <span className="chat-sender">
-                  {/* Display the player's name in chat */}
-                  {msg.sender === playerSymbol
-                    ? gameState.players[playerSymbol]?.name
-                    : opponentName}
+                  {getEmoji(msg.sender)}
                   {msg.timestamp && <span className="chat-timestamp">{msg.timestamp}</span>}
                 </span>
                 <span className="chat-text">{msg.message}</span>
@@ -388,7 +385,7 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
             {isOpponentTyping && (
               <div className="chat-message opponent typing-indicator">
                 <span className="chat-sender">
-                  {opponentName}
+                  {getEmoji(playerSymbol === 'P1' ? 'P2' : 'P1')}
                   <span className="chat-timestamp"></span>
                 </span>
                 <span className="chat-text">typing<span className="dots">...</span></span>

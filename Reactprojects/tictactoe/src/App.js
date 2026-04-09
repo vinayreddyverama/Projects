@@ -92,11 +92,8 @@ function App() {
         const gameName = names[targetGame];
         if (gameName) {
           setNotification(`⚠️ Your opponent moved to ${gameName}! Select it from the sidebar to follow.`);
-        } else if (targetGame !== 'summary') {
-          // This case handles if the target game is not one of the main games, but also not the summary.
-          // It prevents showing "undefined".
-          setNotification('⚠️ Your opponent switched games! Select it from the sidebar to follow.');
         }
+        // By not having an 'else', we prevent notifications for non-game tabs like 'summary'.
       } else if (reason === 'end') {
         setNotification('⚠️ The session was ended by your opponent.');
         resetSessionScores();
@@ -105,7 +102,7 @@ function App() {
       }
       setActiveTab('summary');
     }, 100);
-  }, []);
+  }, [resetSessionScores]);
 
   const handleTabChange = (tab) => {
     if (activeTab !== 'summary' && tab !== activeTab && activeSocketRef.current) {
@@ -156,8 +153,6 @@ function App() {
     const overallTotal = ttTotal + c4Total + seqTotal;
     const overallWinRate = overallTotal > 0 ? ((overallWins / overallTotal) * 100).toFixed(1) : 0;
     const ttWinRate = ttTotal > 0 ? ((tt.wins / ttTotal) * 100).toFixed(1) : 0;
-    const c4WinRate = c4Total > 0 ? ((c4.wins / c4Total) * 100).toFixed(1) : 0;
-    const seqWinRate = seqTotal > 0 ? ((seq.wins / seqTotal) * 100).toFixed(1) : 0;
 
     return (
       <div className="summary-screen">
@@ -176,7 +171,7 @@ function App() {
             {notification}
           </div>
         )}
-        <h1>🏆 Player Summary</h1>
+        <h1>🏆 Overall Performance</h1>
         {globalPlayerName && <h2>{globalPlayerName}</h2>}
         
         <div className="summary-cards">
@@ -194,15 +189,15 @@ function App() {
           </div>
           <div className="summary-card">
             <h3>Connect 4</h3>
-            <p>Games Played: <strong>{c4Total}</strong></p>
-            <p>Score: <strong style={{color: '#4ade80'}}>{c4.wins}W</strong> - <strong style={{color: '#ff6b6b'}}>{c4.losses}L</strong> - <strong>{c4.draws}D</strong></p>
-            <p>Win Rate: <strong>{c4WinRate}%</strong></p>
+            <p>Games Played: <strong>{scores.connect4.wins + scores.connect4.losses + scores.connect4.draws}</strong></p>
+            <p>Score: <strong style={{color: '#4ade80'}}>{scores.connect4.wins}W</strong> - <strong style={{color: '#ff6b6b'}}>{scores.connect4.losses}L</strong> - <strong>{scores.connect4.draws}D</strong></p>
+            <p>Win Rate: <strong>{( (scores.connect4.wins + scores.connect4.losses + scores.connect4.draws) > 0 ? ((scores.connect4.wins / (scores.connect4.wins + scores.connect4.losses + scores.connect4.draws)) * 100).toFixed(1) : 0)}%</strong></p>
           </div>
           <div className="summary-card">
             <h3>Sequence (5 in a Row)</h3>
-            <p>Games Played: <strong>{seqTotal}</strong></p>
-            <p>Score: <strong style={{color: '#4ade80'}}>{seq.wins}W</strong> - <strong style={{color: '#ff6b6b'}}>{seq.losses}L</strong> - <strong>{seq.draws}D</strong></p>
-            <p>Win Rate: <strong>{seqWinRate}%</strong></p>
+            <p>Games Played: <strong>{scores.sequence.wins + scores.sequence.losses + scores.sequence.draws}</strong></p>
+            <p>Score: <strong style={{color: '#4ade80'}}>{scores.sequence.wins}W</strong> - <strong style={{color: '#ff6b6b'}}>{scores.sequence.losses}L</strong> - <strong>{scores.sequence.draws}D</strong></p>
+            <p>Win Rate: <strong>{( (scores.sequence.wins + scores.sequence.losses + scores.sequence.draws) > 0 ? ((scores.sequence.wins / (scores.sequence.wins + scores.sequence.losses + scores.sequence.draws)) * 100).toFixed(1) : 0)}%</strong></p>
           </div>
         </div>
         <button className="reset-btn" onClick={resetSession} style={{ marginTop: '40px', padding: '15px 40px', fontSize: '1.3em' }}>

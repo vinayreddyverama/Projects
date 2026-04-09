@@ -23,7 +23,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
   const hasAutoJoined = useRef(false);
   const [disconnectCountdown, setDisconnectCountdown] = useState(null);
 
-  const getEmoji = (sym) => sym; // Use X and O directly
+  const getEmoji = (sym) => sym;
 
   const playSendSound = () => {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3');
@@ -364,7 +364,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
                 <div>❌ Losses: {gameState.players[playerSymbol]?.score?.losses || 0}</div>
                 <div>🎮 Total: {gameState.players[playerSymbol]?.score?.total || 0}</div>
               </div>
-              <p className="player-turn">{gameState.currentPlayer === playerSymbol ? 'Your Turn' : ''}</p>
+              <p className="player-turn">{gameState.currentPlayer === playerSymbol ? getEmoji(playerSymbol) : '⚫'}</p>
             </div>
 
             <div className="player-card opponent">
@@ -378,7 +378,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
                 <div>❌ Losses: {gameState.players[playerSymbol === 'X' ? 'O' : 'X']?.score?.losses || 0}</div>
                 <div>🎮 Total: {gameState.players[playerSymbol === 'X' ? 'O' : 'X']?.score?.total || 0}</div>
               </div>
-              <p className="player-turn">{gameState.currentPlayer !== playerSymbol ? "Opponent's Turn" : ''}</p>
+              <p className="player-turn">{gameState.currentPlayer !== playerSymbol ? getEmoji(playerSymbol === 'X' ? 'O' : 'X') : '⚫'}</p>
             </div>
           </div>
 
@@ -419,10 +419,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
             {chatMessages.map((msg, i) => (
               <div key={i} className={`chat-message ${msg.sender === playerSymbol ? 'self' : 'opponent'}`}>
                 <span className="chat-sender">
-                  {/* Display the player's name in chat */}
-                  {msg.sender === playerSymbol
-                    ? gameState.players[playerSymbol]?.name
-                    : opponentName}
+                  {getEmoji(msg.sender)}
                   {msg.timestamp && <span className="chat-timestamp">{msg.timestamp}</span>}
                 </span>
                 <span className="chat-text">{msg.message}</span>
@@ -431,7 +428,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
             {isOpponentTyping && (
               <div className="chat-message opponent typing-indicator">
                 <span className="chat-sender">
-                  {opponentName}
+                  {getEmoji(playerSymbol === 'X' ? 'O' : 'X')}
                   <span className="chat-timestamp"></span>
                 </span>
                 <span className="chat-text">typing<span className="dots">...</span></span>

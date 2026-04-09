@@ -6,9 +6,9 @@ This document maps out the architecture and component connections of the React G
 
 The application has been modularized and upgraded into a fully networked multiplayer hub:
 - **`App.js`**: The **Game Hub Wrapper**. It manages the sidebar navigation, cross-game score tracking, global player names, background music, and the End & Summary dashboard (with Confetti!).
-- **`TicTacToe.js`**: Contains the Socket.IO client logic and React UI for Tic Tac Toe (using 🔴 and 🔵 emojis).
+- **`TicTacToe.js`**: Contains the Socket.IO client logic and React UI for Tic Tac Toe (using 'X' and 'O').
 - **`Connect4.js`**: Contains the Socket.IO client logic and React UI for Connect 4 (using 🍎 and 🥭 emojis).
-- **`Sequence.js`**: Contains the Socket.IO client logic and React UI for Sequence 5-in-a-row (using 🦊 and 🐸 emojis).
+- **`Sequence.js`**: Contains the Socket.IO client logic and React UI for Sequence 5-in-a-row (using 🔴 and 🟡 emojis).
 - **`Game.js`, `Connect4Game.js`, & `SequenceGame.js` (Backend)**: The authoritative rule engines running on the Node.js server that validate all moves and determine winners.
 
 ## 2. Component Workflow Diagram

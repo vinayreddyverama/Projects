@@ -9,6 +9,7 @@ import Sequence from './Sequence';
 function App() {
   const [activeTab, setActiveTab] = useState('tictactoe');
   const [globalPlayerName, setGlobalPlayerName] = useState('');
+  const [lockedGameType, setLockedGameType] = useState(null);
   const [scores, setScores] = useState({
     tictactoe: { wins: 0, losses: 0, draws: 0, played: false },
     connect4: { wins: 0, losses: 0, draws: 0, played: false },
@@ -78,6 +79,7 @@ function App() {
       sequence: { wins: 0, losses: 0, draws: 0, played: false }
     });
     setGlobalPlayerName('');
+    setLockedGameType(null);
   }, []);
 
   const handleOpponentLeft = useCallback((reason, targetGame) => {
@@ -87,32 +89,16 @@ function App() {
     
     // Delay unmounting to ensure WebSocket packets are successfully sent
     setTimeout(() => {
-      if (reason === 'switch') {
-        const names = { tictactoe: 'Tic Tac Toe', connect4: 'Connect 4', sequence: 'Sequence' };
-        const gameName = names[targetGame];
-        if (gameName) {
-          setNotification(`⚠️ Your opponent moved to ${gameName}! Select it from the sidebar to follow.`);
-        }
-        // By not having an 'else', we prevent notifications for non-game tabs like 'summary'.
-      } else if (reason === 'end') {
+      if (reason === 'end') {
         setNotification('⚠️ The session was ended by your opponent.');
-        resetSessionScores();
       } else {
         setNotification('⚠️ Your opponent disconnected and failed to return.');
       }
       setActiveTab('summary');
     }, 100);
-  }, [resetSessionScores]);
+  }, []);
 
   const handleTabChange = (tab) => {
-    if (activeTab !== 'summary' && tab !== activeTab && activeSocketRef.current) {
-      activeSocketRef.current.emit('switchGame', tab);
-      setTimeout(() => {
-        setNotification('');
-        setActiveTab(tab);
-      }, 100);
-      return;
-    }
     setNotification(''); // Clear notification when switching tabs
     setActiveTab(tab);
   };
@@ -249,21 +235,24 @@ function App() {
         <div className="sidebar-links">
           <button 
             className={`sidebar-btn ${activeTab === 'tictactoe' ? 'active' : ''}`}
-            onClick={() => handleTabChange('tictactoe')}
+            onClick={() => setActiveTab('tictactoe')}
+            disabled={lockedGameType && lockedGameType !== 'tictactoe'}
           >
             <span>Tic Tac Toe</span>
             {renderScore('tictactoe')}
           </button>
           <button 
             className={`sidebar-btn ${activeTab === 'connect4' ? 'active' : ''}`}
-            onClick={() => handleTabChange('connect4')}
+            onClick={() => setActiveTab('connect4')}
+            disabled={lockedGameType && lockedGameType !== 'connect4'}
           >
             <span>Connect 4</span>
             {renderScore('connect4')}
           </button>
           <button 
             className={`sidebar-btn ${activeTab === 'sequence' ? 'active' : ''}`}
-            onClick={() => handleTabChange('sequence')}
+            onClick={() => setActiveTab('sequence')}
+            disabled={lockedGameType && lockedGameType !== 'sequence'}
           >
             <span>Sequence</span>
             {renderScore('sequence')}
@@ -289,6 +278,7 @@ function App() {
             setGlobalPlayerName={setGlobalPlayerName} 
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
+            setLockedGameType={setLockedGameType}
             activeSocketRef={activeSocketRef}
           />
         ) : activeTab === 'sequence' ? (
@@ -298,6 +288,7 @@ function App() {
             setGlobalPlayerName={setGlobalPlayerName} 
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
+            setLockedGameType={setLockedGameType}
             activeSocketRef={activeSocketRef}
           />
         ) : (
@@ -307,6 +298,7 @@ function App() {
             setGlobalPlayerName={setGlobalPlayerName} 
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
+            setLockedGameType={setLockedGameType}
             activeSocketRef={activeSocketRef}
           />
         )}

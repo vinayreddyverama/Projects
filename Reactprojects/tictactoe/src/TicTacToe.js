@@ -1,29 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
 import logger from './logger';
 import './TicTacToe.css';
+import { useSocket } from './useSocket';
 
 const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 
-const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, activeSocketRef }) => {
-  const [socket, setSocket] = useState(null);
-  const [phase, setPhase] = useState('nameInput'); // nameInput, playing, finished
+const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
+  const {
+    socket, phase, setPhase, gameState, playerSymbol, gameId, status,
+    opponentName, chatMessages, setChatMessages, isOpponentTyping, disconnectCountdown, setDisconnectCountdown, getEmoji
+  } = useSocket('tictactoe', onScoreUpdate, onOpponentLeft);
+
   const [playerName, setPlayerName] = useState(globalPlayerName || '');
   const [joinGameId, setJoinGameId] = useState('');
-  const [playerSymbol, setPlayerSymbol] = useState(null);
-  const [gameState, setGameState] = useState(null);
-  const [gameId, setGameId] = useState(null);
-  const [status, setStatus] = useState('');
-  const [opponentName, setOpponentName] = useState('');
-  const [chatMessages, setChatMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState('');
-  const [isOpponentTyping, setIsOpponentTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
   const chatEndRef = useRef(null);
   const hasAutoJoined = useRef(false);
-  const [disconnectCountdown, setDisconnectCountdown] = useState(null);
-
-  const getEmoji = (sym) => sym;
 
   const playSendSound = () => {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3');
@@ -58,169 +51,12 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
     }
   }, [disconnectCountdown]);
 
-  // Initialize socket connection
-  useEffect(() => {
-    let isMounted = true;
-
-    const updateStatus = (state, currentPlayerSymbol, oppName = '') => {
-      if (!isMounted) return;
-      if (state.winner) {
-        if (state.winner === 'draw') {
-          setStatus("It's a Draw!");
-        } else {
-          const winnerName = state.players[state.winner]?.name || state.winner;
-          setStatus(state.winner === currentPlayerSymbol ? `You won! 🎉 ${getEmoji(currentPlayerSymbol)} (${winnerName})` : `Winner: ${winnerName} ${getEmoji(state.winner)}`);
-        }
-      } else {
-        const opponentSymbol = currentPlayerSymbol === 'X' ? 'O' : 'X';
-        setStatus(state.currentPlayer === currentPlayerSymbol ? 'Your turn' : `${oppName}'s turn (${getEmoji(opponentSymbol)})`);
-      }
-    };
-
-    const checkScoreUpdate = (state, currentSocketId) => {
-      if (!state || !state.players) return;
-      const mySymbol = state.players.X?.id === currentSocketId ? 'X' : (state.players.O?.id === currentSocketId ? 'O' : null);
-      if (mySymbol && state.players[mySymbol]?.score) {
-        const { wins, losses, draws } = state.players[mySymbol].score;
-        if (onScoreUpdate) onScoreUpdate(wins, losses, draws);
-      }
-    };
-
-    const newSocket = io('/', {
-      reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-    });
-
-    newSocket.on('connect', () => {
-      if (!isMounted) return;
-      logger.connection(newSocket.id);
-    });
-
-    newSocket.on('nameError', (message) => {
-      if (!isMounted) return;
-      alert(message);
-      setPhase('nameInput');
-      setPlayerName('');
-      if (setGlobalPlayerName) setGlobalPlayerName('');
-      hasAutoJoined.current = false;
-    });
-
-    newSocket.on('playerAssigned', (data) => {
-      if (!isMounted) return;
-      logger.playerJoin(data.symbol, data.symbol, data.game.gameId);
-      setPlayerSymbol(data.symbol);
-      setGameId(data.game.gameId);
-      setGameState(data.game);
-      setPhase('waiting');
-      setStatus('Waiting for another player to join...');
-    });
-
-    newSocket.on('receiveMessage', (data) => {
-      if (!isMounted) return;
-      setChatMessages((prev) => [...prev.slice(-9), data]); // Keeps the last 10 messages
-      setIsOpponentTyping(false); // Hide indicator when message is finally received
-    });
-
-    newSocket.on('opponentTyping', () => {
-      if (isMounted) setIsOpponentTyping(true);
-    });
-
-    newSocket.on('opponentStoppedTyping', () => {
-      if (isMounted) setIsOpponentTyping(false);
-    });
-
-    newSocket.on('opponentSwitched', (targetGame) => {
-      if (!isMounted) return;
-      setDisconnectCountdown(null);
-      if (onOpponentLeft) onOpponentLeft('switch', targetGame);
-    });
-
-    newSocket.on('sessionEnded', () => {
-      if (!isMounted) return;
-      setDisconnectCountdown(null);
-      if (onOpponentLeft) onOpponentLeft('end');
-    });
-
-    newSocket.on('opponentDisconnected', () => {
-      if (!isMounted) return;
-      setDisconnectCountdown(30);
-    });
-
-    newSocket.on('gameUpdate', (state) => {
-      if (!isMounted) return;
-      setDisconnectCountdown(null);
-      logger.info('Game state updated');
-      setGameState(state);
-      const mySymbol = state.players.X?.id === newSocket.id ? 'X' : 'O';
-      const oppSymbol = mySymbol === 'X' ? 'O' : 'X';
-      const oppName = state.players[oppSymbol]?.name;
-      updateStatus(state, mySymbol, oppName);
-      checkScoreUpdate(state, newSocket.id);
-    });
-
-    newSocket.on('gameStart', (state) => {
-      if (!isMounted) return;
-      logger.gameStart(state.gameId, state.players);
-      let mySymbol = null;
-      let oppName = '';
-      if (state.players.X.id === newSocket.id) {
-        mySymbol = 'X';
-        oppName = state.players.O.name;
-      } else {
-        mySymbol = 'O';
-        oppName = state.players.X.name;
-      }
-      setPlayerSymbol(mySymbol);
-      setOpponentName(oppName);
-      setPhase('playing');
-      setGameState(state);
-      updateStatus(state, mySymbol, oppName);
-      checkScoreUpdate(state, newSocket.id);
-    });
-
-    newSocket.on('gameEnd', (state) => {
-      if (!isMounted) return;
-      logger.gameEnd(state.winner, state.winner === 'draw' ? 'draw' : 'win');
-      setPhase('finished');
-      setGameState(state);
-      
-      const mySymbol = state.players.X?.id === newSocket.id ? 'X' : 'O';
-      const oppSymbol = mySymbol === 'X' ? 'O' : 'X';
-      const oppName = state.players[oppSymbol]?.name;
-      updateStatus(state, mySymbol, oppName);
-      checkScoreUpdate(state, newSocket.id);
-    });
-
-    newSocket.on('opponentLeft', () => {
-      if (!isMounted) return;
-      setDisconnectCountdown(null);
-      logger.info('Opponent disconnected!');
-      setPhase('ended');
-      setStatus('Opponent disconnected!');
-      if (onOpponentLeft) onOpponentLeft('disconnect');
-    });
-
-    newSocket.on('disconnect', () => {
-      if (!isMounted) return;
-      logger.disconnection(newSocket.id);
-      setStatus('Disconnected from server');
-    });
-
-    setSocket(newSocket);
-    if (activeSocketRef) activeSocketRef.current = newSocket;
-    return () => {
-      isMounted = false;
-      newSocket.disconnect();
-    };
-  }, [onScoreUpdate]);
-
   useEffect(() => {
     if (socket && globalPlayerName && phase === 'nameInput' && !hasAutoJoined.current) {
       hasAutoJoined.current = true;
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(globalPlayerName);
-      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'tictactoe', requestedGameId: null });
+      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'tictactoe', requestedGameId: parseInt(joinGameId) || null });
     }
   }, [socket, globalPlayerName, phase, onPlayMusic]);
 
@@ -284,6 +120,15 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
     socket.emit('gameReset');
     setPhase('playing');
   };
+
+  useEffect(() => {
+    if (socket) {
+      socket.on('nameError', (message) => {
+        alert(message);
+        setPhase('nameInput');
+      });
+    }
+  }, [socket, setPhase]);
 
   if (phase === 'nameInput') {
     if (globalPlayerName) {

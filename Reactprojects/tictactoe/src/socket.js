@@ -177,21 +177,6 @@ module.exports = (io) => {
       if (gameId) socket.to(`game-${gameId}`).emit('opponentStoppedTyping');
     });
 
-    socket.on('switchGame', (targetGame) => {
-      socket.isSwitching = true;
-      const gameId = playerToGame.get(socket.id);
-      if (gameId) {
-        socket.to(`game-${gameId}`).emit('opponentSwitched', targetGame);
-        
-        const game = games.get(gameId);
-        if (game) {
-          game.reset();
-          // Notify both players of the reset
-          io.to(`game-${gameId}`).emit('gameUpdate', game.getState());
-        }
-      }
-    });
-
     socket.on('endSession', () => {
       socket.isSwitching = true;
       const gameId = playerToGame.get(socket.id);
@@ -225,21 +210,19 @@ module.exports = (io) => {
             game.players[playerSymbol].disconnected = true;
             logger.playerDisconnect(playerSymbol, gameId);
 
-            if (!socket.isSwitching) {
-              io.to(`game-${gameId}`).emit('opponentDisconnected');
-              
-              setTimeout(() => {
-                const currentGame = games.get(gameId);
-                if (currentGame && currentGame.players[playerSymbol]?.disconnected) {
-                  const allDisconnected = Object.values(currentGame.players).every(p => !p || p.disconnected);
-                  if (allDisconnected) {
-                    games.delete(gameId);
-                  } else {
-                    io.to(`game-${gameId}`).emit('opponentLeft');
-                  }
+            io.to(`game-${gameId}`).emit('opponentDisconnected');
+            
+            setTimeout(() => {
+              const currentGame = games.get(gameId);
+              if (currentGame && currentGame.players[playerSymbol]?.disconnected) {
+                const allDisconnected = Object.values(currentGame.players).every(p => !p || p.disconnected);
+                if (allDisconnected) {
+                  games.delete(gameId);
+                } else {
+                  io.to(`game-${gameId}`).emit('opponentLeft');
                 }
-              }, 30000);
-            }
+              }
+            }, 30000);
           }
         }
       }

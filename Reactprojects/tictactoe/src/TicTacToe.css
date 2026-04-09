@@ -90,14 +90,13 @@
   align-items: stretch;
   justify-content: center;
   width: 100%;
-  flex-wrap: wrap;
 }
 
 /* ==================== GAME SCREEN ==================== */
 .game-screen {
   background: white;
   border-radius: 20px;
-  flex: 1;
+  flex: 2; /* Give more space to the game screen */
   margin: 0 auto;
   padding: 30px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -274,21 +273,19 @@
   animation: spin 1s linear infinite;
 }
 
-/* ==================== CHAT SIDEBAR ==================== */
+/* ==================== CHAT BOX ==================== */
 .chat-container {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 320px;
+  flex: 1; /* Allow chat to take up space */
+  min-width: 300px;
+  max-width: 350px;
   background: #000000; /* Black background */
   color: #e4e4e7;
-  z-index: 1001;
   display: flex;
   flex-direction: column;
   padding: 20px;
-  box-shadow: -5px 0 25px rgba(0,0,0,0.2);
-  animation: slideInFromRight 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.5s ease-out;
 }
 
 .chat-messages {

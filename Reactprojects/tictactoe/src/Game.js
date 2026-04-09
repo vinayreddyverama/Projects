@@ -1,6 +1,7 @@
 class Game {
   constructor(id) {
     this.id = id;
+    this.type = 'tictactoe';
     this.board = Array(9).fill(null);
     this.currentPlayer = 'X';
     this.players = { X: null, O: null };
@@ -9,11 +10,31 @@ class Game {
 
   addPlayer(socketId, name) {
     const initialScore = { wins: 0, losses: 0, draws: 0, total: 0 };
+
+    if ((this.players.X && this.players.X.name === name) || 
+        (this.players.O && this.players.O.name === name)) {
+      return null; // Name already taken in this game
+    }
+
     if (!this.players.X) {
       this.players.X = { id: socketId, name, score: { ...initialScore } };
       return 'X';
     } else if (!this.players.O) {
       this.players.O = { id: socketId, name, score: { ...initialScore } };
+      return 'O';
+    }
+    return null;
+  }
+
+  reconnectPlayer(socketId, name) {
+    if (this.players.X && this.players.X.name === name && this.players.X.disconnected) {
+      this.players.X.id = socketId;
+      this.players.X.disconnected = false;
+      return 'X';
+    }
+    if (this.players.O && this.players.O.name === name && this.players.O.disconnected) {
+      this.players.O.id = socketId;
+      this.players.O.disconnected = false;
       return 'O';
     }
     return null;
@@ -83,12 +104,13 @@ class Game {
       currentPlayer: this.currentPlayer,
       players: this.players,
       winner: this.winner,
-      gameId: this.id
+      gameId: this.id,
+      type: this.type
     };
   }
 
   isReady() {
-    return this.players.X && this.players.O;
+    return this.players.X && !this.players.X.disconnected && this.players.O && !this.players.O.disconnected;
   }
 }
 

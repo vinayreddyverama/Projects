@@ -1,0 +1,32 @@
+.seq-board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: clamp(2px, 0.5vw, 5px);
+  margin: 30px auto;
+  width: 100%;
+  max-width: 600px;
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  padding: clamp(5px, 2vw, 15px);
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.seq-cell {
+  aspect-ratio: 1;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: clamp(0.8em, 3.5vw, 1.8em);
+  box-shadow: inset 0 -2px 5px rgba(0,0,0,0.05);
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.seq-cell.clickable { cursor: pointer; }
+.seq-cell.clickable:hover { background: #fff9e6; transform: scale(1.1); }
+
+.seq-emoji {
+  animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}

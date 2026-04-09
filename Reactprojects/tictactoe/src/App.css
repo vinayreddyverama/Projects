@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -5,9 +7,17 @@
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Nunito', 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+  background: linear-gradient(-45deg, #ff9a9e, #fecfef, #a1c4fd, #c2e9fb);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
   min-height: 100vh;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .container {
@@ -24,7 +34,7 @@ body {
 /* ==================== WELCOME SCREEN ==================== */
 .welcome-screen {
   background: white;
-  border-radius: 20px;
+  border-radius: 30px;
   padding: 50px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   text-align: center;
@@ -32,15 +42,18 @@ body {
 }
 
 .welcome-screen h1 {
-  font-size: 3.5em;
-  color: #667eea;
-  margin-bottom: 15px;
-  font-weight: bold;
+  font-size: clamp(2.5em, 8vw, 4.5em);
+  color: #ff4757;
+  margin-bottom: 20px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-shadow: 4px 4px 0px rgba(0,0,0,0.1), 2px 2px 0px rgba(255, 255, 255, 0.8);
 }
 
 .subtitle {
-  font-size: 1.1em;
-  color: #666;
+  font-size: clamp(1em, 4vw, 1.4em);
+  color: #555;
+  font-weight: 600;
   margin-bottom: 40px;
 }
 
@@ -103,8 +116,10 @@ body {
 
 .game-screen h1 {
   text-align: center;
-  font-size: 2.5em;
+  font-size: clamp(1.8em, 6vw, 2.5em);
   color: #667eea;
+  font-weight: 800;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
   margin-bottom: 20px;
 }
 

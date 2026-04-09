@@ -1,0 +1,116 @@
+.connect4-container {
+  width: 100%;
+  max-width: 800px;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.c4-game-screen {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  width: 100%;
+  animation: slideUp 0.5s ease-out;
+}
+
+.c4-game-screen h1 {
+  color: #667eea;
+  margin-bottom: 10px;
+  font-size: 2.5em;
+}
+
+.c4-status {
+  margin-bottom: 20px;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.c4-indicator {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.c4-indicator.red { background-color: #ff4757; }
+.c4-indicator.yellow { background-color: #f1c40f; }
+
+.c4-board {
+  background-color: #0984e3;
+  padding: 10px;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.c4-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.c4-cell-wrapper {
+  flex: 1;
+  aspect-ratio: 1;
+  max-width: 70px;
+  padding: 1.5%;
+  cursor: pointer;
+}
+
+.c4-emoji {
+  font-size: clamp(1.2em, 5vw, 2.5em);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.c4-cell-wrapper:hover .c4-cell:not(.red):not(.yellow) {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.c4-cell {
+  width: 100%;
+  height: 100%;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
+  transition: background-color 0.3s;
+}
+
+.c4-cell.red {
+  background-color: #ff4757;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.2), 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.c4-cell.yellow {
+  background-color: #f1c40f;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.2), 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.c4-reset-btn {
+  margin-top: 30px;
+  padding: 12px 40px;
+  font-size: 1.1em;
+  font-weight: bold;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}

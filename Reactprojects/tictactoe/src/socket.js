@@ -183,7 +183,7 @@ module.exports = (io) => {
       socket.isSwitching = true;
       const gameId = playerToGame.get(socket.id);
       if (gameId) {
-        io.to(`game-${gameId}`).emit('sessionEnded');
+        socket.to(`game-${gameId}`).emit('sessionEnded');
         games.delete(gameId);
       }
     });

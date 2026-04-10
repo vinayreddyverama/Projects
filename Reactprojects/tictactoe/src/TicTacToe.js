@@ -8,7 +8,7 @@ const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
-    opponentName, chatMessages, isOpponentTyping, disconnectCountdown, getEmoji
+    opponentName, chatMessages, isOpponentTyping, getEmoji
   } = useSocket('tictactoe', onScoreUpdate, onOpponentLeft, activeSocketRef);
 
   const [playerName, setPlayerName] = useState(globalPlayerName || '');

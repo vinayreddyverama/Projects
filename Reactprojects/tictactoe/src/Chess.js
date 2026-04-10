@@ -3,6 +3,7 @@ import logger from './logger';
 import './Chess.css';
 import './TicTacToe.css'; // Reuse layouts
 import { useSocket } from './useSocket';
+import { Chess as ChessJS } from 'chess.js';
 
 const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 
@@ -23,7 +24,20 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
   const chatEndRef = useRef(null);
   const hasAutoJoined = useRef(false);
   const [selectedSquare, setSelectedSquare] = useState(null);
+  const [possibleMoves, setPossibleMoves] = useState([]);
   const [board, setBoard] = useState([]);
+  const [lastMove, setLastMove] = useState(null);
+  const [kingInCheckSquare, setKingInCheckSquare] = useState(null);
+
+  const chess = React.useMemo(() => {
+    try {
+      // Creates a new chess instance based on the FEN from the server
+      return new ChessJS(gameState?.fen);
+    } catch (e) {
+      // Fallback to a default board if FEN is invalid
+      return new ChessJS();
+    }
+  }, [gameState?.fen]);
 
   useEffect(() => {
     if (gameState?.fen) {
@@ -44,16 +58,43 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
       });
       setBoard(newBoard);
     }
-  }, [gameState]);
+
+    // Update last move highlight
+    const history = gameState?.history;
+    if (history && history.length > 0) {
+      const last = history[history.length - 1];
+      setLastMove({ from: last.from, to: last.to });
+    } else {
+      setLastMove(null);
+    }
+
+    // Update check highlight
+    if (chess.isCheck()) {
+      // Find the king of the current turn's color
+      const kingSquare = chess.board().flat().find(p => p && p.type === 'k' && p.color === chess.turn())?.square;
+      setKingInCheckSquare(kingSquare || null);
+    } else {
+      setKingInCheckSquare(null);
+    }
+  }, [gameState, chess]);
 
   const playSendSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3').play();
   const playReceiveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3').play();
-  const playMoveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/1648/1648-preview.mp3').play();
+  const playMoveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/1648/1648-preview.mp3').play(); // A nice piece-placing sound
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].sender !== playerSymbol) playReceiveSound();
   }, [chatMessages, isOpponentTyping, playerSymbol]);
+
+  useEffect(() => {
+    if (selectedSquare) {
+      const moves = chess.moves({ square: selectedSquare, verbose: true });
+      setPossibleMoves(moves.map(move => move.to));
+    } else {
+      setPossibleMoves([]);
+    }
+  }, [selectedSquare, chess]);
 
   useEffect(() => {
     if (socket && globalPlayerName && phase === 'nameInput' && !hasAutoJoined.current) {
@@ -78,14 +119,30 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     const squareName = String.fromCharCode(97 + c) + (8 - r);
     const piece = board[r][c];
 
+    // If a piece is already selected
     if (selectedSquare) {
-      // This is the second click (making a move)
-      const move = { from: selectedSquare, to: squareName };
-      socket.emit('playerMove', { index: move });
-      playMoveSound();
-      setSelectedSquare(null);
+      // If the clicked square is a valid move, make the move
+      if (possibleMoves.includes(squareName)) {
+        const move = { from: selectedSquare, to: squareName };
+        // Auto-promote to Queen for simplicity. A professional UI could have a selection modal here.
+        const fromPiece = chess.get(selectedSquare);
+        if (fromPiece.type === 'p' && (squareName[1] === '8' || squareName[1] === '1')) {
+          move.promotion = 'q';
+        }
+        socket.emit('playerMove', { index: move });
+        playMoveSound();
+        setSelectedSquare(null);
+        setPossibleMoves([]);
+      } else if (piece && piece.color === playerSymbol) {
+        // If another of the player's own pieces is clicked, switch selection
+        setSelectedSquare(squareName);
+      } else {
+        // Otherwise, deselect
+        setSelectedSquare(null);
+        setPossibleMoves([]);
+      }
     } else if (piece && piece.color === playerSymbol) {
-      // This is the first click (selecting a piece)
+      // If no piece is selected, select the clicked piece
       setSelectedSquare(squareName);
     }
   };
@@ -179,18 +236,28 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
             </div>
           </div>
 
-          <div className="chess-board-container">
+          <div className="chess-board-wrapper">
             <div className={`chess-board ${playerSymbol === 'b' ? 'flipped' : ''}`}>
               {board.map((row, rIndex) => (
                 row.map((piece, cIndex) => {
                   const squareName = String.fromCharCode(97 + cIndex) + (8 - rIndex);
+                  const isLight = (rIndex + cIndex) % 2 === 0;
                   return (
                     <div
                       key={`${rIndex}-${cIndex}`}
-                      className={`chess-square ${(rIndex + cIndex) % 2 === 0 ? 'light' : 'dark'} ${selectedSquare === squareName ? 'selected' : ''}`}
+                      className={`chess-square ${isLight ? 'light' : 'dark'} 
+                        ${selectedSquare === squareName ? 'selected' : ''}
+                        ${lastMove?.from === squareName || lastMove?.to === squareName ? 'last-move' : ''}
+                        ${kingInCheckSquare === squareName ? 'in-check' : ''}
+                      `}
                       onClick={() => handleSquareClick(rIndex, cIndex)}
                     >
+                      {cIndex === 0 && <span className="rank-label">{8 - rIndex}</span>}
+                      {rIndex === 7 && <span className="file-label">{String.fromCharCode(97 + cIndex)}</span>}
                       {piece && <span className="chess-piece">{pieceMap[piece.type]}</span>}
+                      {possibleMoves.includes(squareName) && (
+                        <div className="possible-move-dot" />
+                      )}
                     </div>
                   );
                 })

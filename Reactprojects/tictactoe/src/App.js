@@ -118,11 +118,14 @@ function App() {
     playCelebrationSound();
     if (activeSocketRef.current) {
       activeSocketRef.current.emit('endSession');
+      setNotification('⚠️ The session was ended by you.');
       setTimeout(() => {
         handleTabChange('summary');
       }, 100);
       return;
     }
+    // Fallback for when there is no active socket
+    setNotification('⚠️ The session was ended by you.');
     handleTabChange('summary');
   };
 

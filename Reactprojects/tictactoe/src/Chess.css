@@ -1,19 +1,20 @@
-.chess-board-container {
+.chess-board-wrapper {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   margin: 20px 0;
+  width: 100%;
+  max-width: 600px;
 }
 
 .chess-board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   width: 100%;
-  max-width: 600px;
   aspect-ratio: 1;
-  border: 5px solid #6a4f4b;
-  border-radius: 5px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  border-radius: 4px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.3), 0 5px 10px rgba(0,0,0,0.2);
 }
 
 .chess-board.flipped {
@@ -25,6 +26,7 @@
 }
 
 .chess-square {
+  position: relative; /* For move indicators and labels */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -40,12 +42,57 @@
 }
 
 .chess-square.selected {
-  background-color: #6a994e !important;
+  background-color: rgba(134, 179, 68, 0.8) !important;
+}
+
+.chess-square.last-move::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(255, 255, 0, 0.3);
+  pointer-events: none;
+}
+
+.chess-square.in-check::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: radial-gradient(circle, rgba(255,0,0,0.8) 20%, transparent 70%);
+  pointer-events: none;
+}
+
+.possible-move-dot {
+  position: absolute;
+  width: 30%;
+  height: 30%;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.rank-label, .file-label {
+  position: absolute;
+  font-size: clamp(0.6em, 2vw, 0.8em);
+  font-weight: bold;
+  pointer-events: none;
+  user-select: none;
+}
+
+.dark .rank-label, .dark .file-label { color: #f0d9b5; }
+.light .rank-label, .light .file-label { color: #b58863; }
+
+.rank-label { top: 2px; left: 3px; }
+.file-label { bottom: 2px; right: 3px; }
+
+.chess-board.flipped .rank-label, .chess-board.flipped .file-label {
+  transform: rotate(180deg);
 }
 
 .chess-piece {
-  font-size: clamp(1.5em, 6vw, 3.5em);
-  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  font-size: clamp(1.8em, 7vw, 4em);
+  text-shadow: none; /* Cleaner look */
   line-height: 1;
   -webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE 10 and IE 11 */

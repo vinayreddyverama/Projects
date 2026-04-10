@@ -9,7 +9,7 @@ const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
-    opponentName, chatMessages, isOpponentTyping, disconnectCountdown, getEmoji
+    opponentName, chatMessages, isOpponentTyping, getEmoji
   } = useSocket('connect4', onScoreUpdate, onOpponentLeft, activeSocketRef);
 
   const [playerName, setPlayerName] = useState(globalPlayerName || '');

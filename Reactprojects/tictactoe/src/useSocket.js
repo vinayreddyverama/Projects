@@ -35,7 +35,12 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketR
           setStatus(state.winner === currentPlayerSymbol ? `You won! 🎉 ${getEmoji(currentPlayerSymbol)} (${winnerName})` : `Winner: ${winnerName} ${getEmoji(state.winner)}`);
         }
       } else {
-        setStatus(state.currentPlayer === currentPlayerSymbol ? 'Your turn' : `${oppName}'s turn`);
+        if (gameType === 'chess') {
+          const turnColor = state.turn === 'w' ? 'White' : 'Black';
+          setStatus(state.turn === currentPlayerSymbol ? `Your turn (${turnColor} to move)` : `${turnColor} to move`);
+        } else {
+          setStatus(state.currentPlayer === currentPlayerSymbol ? 'Your turn' : `${oppName}'s turn`);
+        }
       }
     };
 

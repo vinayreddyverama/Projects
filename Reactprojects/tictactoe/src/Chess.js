@@ -4,6 +4,8 @@ import './TicTacToe.css'; // Reuse layouts
 import { useSocket } from './useSocket';
 import { Chess as ChessJS } from 'chess.js';
 
+const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
+
 const pieceMap = {
   p: '♙', n: '♘', b: '♗', r: '♖', q: '♕', k: '♔',
   P: '♟', N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚',
@@ -12,11 +14,14 @@ const pieceMap = {
 const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef, onResign }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
-    opponentName
+    opponentName, chatMessages, isOpponentTyping, getEmoji
   } = useSocket('chess', onScoreUpdate, onOpponentLeft, activeSocketRef);
 
   const [playerName, setPlayerName] = useState(globalPlayerName || '');
+  const [currentMessage, setCurrentMessage] = useState('');
   const hasAutoJoined = useRef(false);
+  const typingTimeoutRef = useRef(null);
+  const chatEndRef = useRef(null);
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [possibleMoves, setPossibleMoves] = useState([]);
   const [board, setBoard] = useState([]);
@@ -73,7 +78,14 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     }
   }, [gameState, chess]);
 
+  const playSendSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3').play();
+  const playReceiveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3').play();
   const playMoveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/1648/1648-preview.mp3').play(); // A nice piece-placing sound
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].sender !== playerSymbol) playReceiveSound();
+  }, [chatMessages, isOpponentTyping, playerSymbol]);
 
   useEffect(() => {
     if (selectedSquare) {
@@ -134,6 +146,39 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     } else if (piece && piece.color === playerSymbol) {
       // If no piece is selected, select the clicked piece
       setSelectedSquare(squareName);
+    }
+  };
+
+  const sendMessage = (message) => {
+    if (socket && message.trim()) {
+      playSendSound();
+      socket.emit('sendMessage', message);
+    }
+  };
+
+  const handleChatChange = (e) => {
+    setCurrentMessage(e.target.value);
+    if (socket) {
+      if (e.target.value.trim() === '') {
+        socket.emit('stopTyping');
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      } else {
+        socket.emit('typing');
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = setTimeout(() => {
+          socket.emit('stopTyping');
+        }, 2000);
+      }
+    }
+  };
+
+  const handleChatSubmit = (e) => {
+    e.preventDefault();
+    sendMessage(currentMessage);
+    setCurrentMessage('');
+    if (socket) {
+      socket.emit('stopTyping');
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     }
   };
 
@@ -257,6 +302,37 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
               <button onClick={handlePlayAgain} className="reset-btn">Play Again</button>
             </div>
           )}
+        </div>
+
+        <div className="chat-container">
+          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#333', textAlign: 'center' }}>💬 Live Chat</h3>
+          <div className="chat-messages">
+            {chatMessages.map((msg, i) => (
+              <div key={i} className={`chat-message ${msg.sender === playerSymbol ? 'self' : 'opponent'}`}>
+                <span className="chat-sender">
+                  {getEmoji(msg.sender)}
+                  {msg.timestamp && <span className="chat-timestamp">{msg.timestamp}</span>}
+                </span>
+                <span className="chat-text">{msg.message}</span>
+              </div>
+            ))}
+            {isOpponentTyping && (
+              <div className="chat-message opponent typing-indicator">
+                <span className="chat-sender">{getEmoji(playerSymbol === 'w' ? 'b' : 'w')}</span>
+                <span className="chat-text">typing...</span>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+          <div className="chat-controls">
+            {QUICK_EMOJIS.map((e) => (
+              <button key={e} className="emoji-btn" onClick={() => sendMessage(e)}>{e}</button>
+            ))}
+          </div>
+          <form onSubmit={handleChatSubmit} className="chat-form">
+            <input type="text" className="chat-input" placeholder="Type a message..." value={currentMessage} onChange={handleChatChange} maxLength="50" />
+            <button type="submit" className="send-btn">Send</button>
+          </form>
         </div>
         {promotionData && (
           <div className="promotion-overlay">

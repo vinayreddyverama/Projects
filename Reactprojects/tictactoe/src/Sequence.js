@@ -6,7 +6,7 @@ import { useSocket } from './useSocket';
 
 const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 
-const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
+const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef, onResign }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
     opponentName, chatMessages, isOpponentTyping, getEmoji
@@ -202,6 +202,13 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
         {gameState.winner && (
           <div className="reset-section">
             <button className="reset-btn" onClick={handlePlayAgain}>Play Again</button>
+          </div>
+        )}
+        {!gameState.winner && phase === 'playing' && (
+          <div className="game-actions">
+            <button onClick={onResign} className="resign-btn">
+              🏳️ Resign
+            </button>
           </div>
         )}
         </div>

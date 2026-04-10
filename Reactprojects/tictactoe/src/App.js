@@ -6,23 +6,6 @@ import TicTacToe from './TicTacToe';
 import Connect4 from './Connect4';
 import Sequence from './Sequence';
 import Chess from './Chess';
-import { useSocket } from './useSocket';
-
-const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
-
-function SummarySocketManager({ onOpponentLeft, activeSocketRef, globalChat, globalPlayerName }) {
-  // This component's only job is to keep a socket connection alive on the summary screen for chat.
-  const { socket } = useSocket('summary', () => {}, onOpponentLeft, activeSocketRef, globalChat);
-  const hasAutoJoined = useRef(false);
-  useEffect(() => {
-    if (socket && globalPlayerName && !hasAutoJoined.current) {
-      hasAutoJoined.current = true;
-      // Use a special gameType 'summary' to join a non-game room for chatting
-      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'summary' });
-    }
-  }, [socket, globalPlayerName]);
-  return null;
-}
 
 function App() {
   const [activeTab, setActiveTab] = useState('tictactoe');
@@ -38,13 +21,6 @@ function App() {
   const audioRef = useRef(null);
   const [notification, setNotification] = useState('');
   const activeSocketRef = useRef(null);
-
-  // Centralized Chat State
-  const [chatMessages, setChatMessages] = useState([]);
-  const [isOpponentTyping, setIsOpponentTyping] = useState(false);
-  const [currentMessage, setCurrentMessage] = useState('');
-  const chatEndRef = useRef(null);
-  const globalChat = { setChatMessages, setIsOpponentTyping };
 
   const handleScoreUpdate = useCallback((game, wins, losses, draws = 0) => {
     setScores(prev => {
@@ -123,6 +99,10 @@ function App() {
   }, []);
 
   const handleTabChange = (tab) => {
+    // If moving from summary to a game, treat it as a new session and reset scores.
+    if (activeTab === 'summary' && tab !== 'summary') {
+      resetSessionScores();
+    }
     setNotification(''); // Clear notification when switching tabs
     setActiveTab(tab);
   };
@@ -156,49 +136,6 @@ function App() {
     // Fallback for when there is no active socket
     setNotification(reason === 'resign' ? '⚠️ You resigned. The session has ended.' : '⚠️ The session was ended by you.');
     handleTabChange('summary');
-  };
-
-  const playSendSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3').play();
-  const playReceiveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3').play();
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    if (chatMessages.length > 0) {
-      const lastMsg = chatMessages[chatMessages.length - 1];
-      // The sender name is now on the message object from the server
-      if (lastMsg.senderName && lastMsg.senderName !== globalPlayerName) {
-        playReceiveSound();
-      }
-    }
-  }, [chatMessages, isOpponentTyping, globalPlayerName]);
-
-  const sendMessage = (message) => {
-    if (activeSocketRef.current && message.trim()) {
-      playSendSound();
-      activeSocketRef.current.emit('sendMessage', message);
-    }
-  };
-
-  const handleChatChange = (e) => {
-    setCurrentMessage(e.target.value);
-    if (activeSocketRef.current) {
-      if (e.target.value.trim() === '') {
-        activeSocketRef.current.emit('stopTyping');
-      } else {
-        activeSocketRef.current.emit('typing');
-      }
-    }
-  };
-
-  const handleChatSubmit = (e) => {
-    e.preventDefault();
-    if (currentMessage.trim()) {
-      sendMessage(currentMessage);
-      setCurrentMessage('');
-      if (activeSocketRef.current) {
-        activeSocketRef.current.emit('stopTyping');
-      }
-    }
   };
 
   const renderSummary = () => {
@@ -318,7 +255,7 @@ function App() {
         <div className="sidebar-links">
           <button 
             className={`sidebar-btn ${activeTab === 'tictactoe' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tictactoe')}
+            onClick={() => handleTabChange('tictactoe')}
             disabled={lockedGameType && lockedGameType !== 'tictactoe'}
           >
             <span>Tic Tac Toe</span>
@@ -326,7 +263,7 @@ function App() {
           </button>
           <button 
             className={`sidebar-btn ${activeTab === 'connect4' ? 'active' : ''}`}
-            onClick={() => setActiveTab('connect4')}
+            onClick={() => handleTabChange('connect4')}
             disabled={lockedGameType && lockedGameType !== 'connect4'}
           >
             <span>Connect 4</span>
@@ -334,7 +271,7 @@ function App() {
           </button>
           <button 
             className={`sidebar-btn ${activeTab === 'sequence' ? 'active' : ''}`}
-            onClick={() => setActiveTab('sequence')}
+            onClick={() => handleTabChange('sequence')}
             disabled={lockedGameType && lockedGameType !== 'sequence'}
           >
             <span>Sequence</span>
@@ -342,7 +279,7 @@ function App() {
           </button>
           <button 
             className={`sidebar-btn ${activeTab === 'chess' ? 'active' : ''}`}
-            onClick={() => setActiveTab('chess')}
+            onClick={() => handleTabChange('chess')}
             disabled={lockedGameType && lockedGameType !== 'chess'}
           >
             <span>Chess</span>
@@ -359,96 +296,38 @@ function App() {
           <span>🏁 End & Summary</span>
         </button>
       </div>
-      <div className="content-wrapper">
-        <div className="main-content">
-          {activeTab === 'summary' ? (
-            <>
-              <SummarySocketManager 
-                onOpponentLeft={handleOpponentLeft} 
-                activeSocketRef={activeSocketRef} 
-                globalChat={globalChat}
-                globalPlayerName={globalPlayerName}
-              />
-              {renderSummary()}
-            </>
-          ) : activeTab === 'connect4' ? (
-            <Connect4 
-              onScoreUpdate={handleConnect4Score} globalPlayerName={globalPlayerName} 
-              setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-              onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-              onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
-              globalChat={globalChat}
-            />
-          ) : activeTab === 'sequence' ? (
-            <Sequence 
-              onScoreUpdate={handleSequenceScore} globalPlayerName={globalPlayerName} 
-              setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-              onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-              onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
-              globalChat={globalChat}
-            />
-          ) : activeTab === 'chess' ? (
-            <Chess
-              onScoreUpdate={handleChessScore} globalPlayerName={globalPlayerName}
-              setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-              onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-              onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
-              globalChat={globalChat}
-            />
-          ) : (
-            <TicTacToe 
-              onScoreUpdate={handleTicTacToeScore} globalPlayerName={globalPlayerName} 
-              setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-              onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-              onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
-              globalChat={globalChat}
-            />
-          )}
-        </div>
-        <div className="chat-container">
-            <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#fff', textAlign: 'center' }}>💬 Live Chat</h3>
-            <div className="chat-messages">
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={`chat-message ${msg.senderName === globalPlayerName ? 'self' : 'opponent'}`}>
-                  <span className="chat-sender">
-                    {msg.senderName === globalPlayerName ? 'You' : msg.senderName}
-                    {msg.timestamp && <span className="chat-timestamp">{msg.timestamp}</span>}
-                  </span>
-                  <span className="chat-text">{msg.message}</span>
-                </div>
-              ))}
-              {isOpponentTyping && (
-                <div className="chat-message opponent typing-indicator">
-                  <span className="chat-sender">Opponent</span>
-                  <span className="chat-text">typing<span className="dots">...</span></span>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-            <div className="chat-controls">
-              {QUICK_EMOJIS.map((e) => (
-                <button key={e} className="emoji-btn" onClick={() => sendMessage(e)}>{e}</button>
-              ))}
-            </div>
-            <form onSubmit={handleChatSubmit} className="chat-form">
-              <input 
-                type="text" 
-                className="chat-input" 
-                placeholder="Type a message..." 
-                value={currentMessage} 
-                onChange={handleChatChange} 
-                maxLength="100" 
-                disabled={!globalPlayerName} 
-              />
-              <button 
-                type="submit" 
-                className="send-btn" 
-                disabled={!globalPlayerName || !currentMessage.trim()}
-              >
-                Send
-              </button>
-            </form>
-          </div>
+      <div className="main-content">
+        {activeTab === 'summary' ? (
+          renderSummary()
+        ) : activeTab === 'connect4' ? (
+          <Connect4 
+            onScoreUpdate={handleConnect4Score} globalPlayerName={globalPlayerName} 
+            setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+          />
+        ) : activeTab === 'sequence' ? (
+          <Sequence 
+            onScoreUpdate={handleSequenceScore} globalPlayerName={globalPlayerName} 
+            setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+          />
+        ) : activeTab === 'chess' ? (
+          <Chess
+            onScoreUpdate={handleChessScore} globalPlayerName={globalPlayerName}
+            setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+          />
+        ) : (
+          <TicTacToe 
+            onScoreUpdate={handleTicTacToeScore} globalPlayerName={globalPlayerName} 
+            setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+          />
+        )}
       </div>
     </div>
   );

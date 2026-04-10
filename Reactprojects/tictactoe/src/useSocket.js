@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import logger from './logger';
 
-export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketRef, globalChat) => {
+export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketRef) => {
   const [socket, setSocket] = useState(null);
   const [phase, setPhase] = useState('nameInput');
   const [gameState, setGameState] = useState(null);
@@ -10,9 +10,9 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketR
   const [gameId, setGameId] = useState(null);
   const [status, setStatus] = useState('');
   const [opponentName, setOpponentName] = useState('');
+  const [chatMessages, setChatMessages] = useState([]);
+  const [isOpponentTyping, setIsOpponentTyping] = useState(false);
   const [disconnectCountdown, setDisconnectCountdown] = useState(null);
-
-  const { setChatMessages, setIsOpponentTyping } = globalChat || {};
 
   const getEmoji = (sym) => {
     if (gameType === 'tictactoe') return sym;
@@ -114,14 +114,14 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketR
     });
 
     newSocket.on('receiveMessage', (data) => {
-      if (isMounted && setChatMessages) {
-        setChatMessages((prev) => [...prev.slice(-99), data]); // Store up to 100 messages
-        if (setIsOpponentTyping) setIsOpponentTyping(false);
+      if (isMounted) {
+        setChatMessages((prev) => [...prev.slice(-99), data]);
+        setIsOpponentTyping(false);
       }
     });
 
-    newSocket.on('opponentTyping', () => { if (isMounted && setIsOpponentTyping) setIsOpponentTyping(true); });
-    newSocket.on('opponentStoppedTyping', () => { if (isMounted && setIsOpponentTyping) setIsOpponentTyping(false); });
+    newSocket.on('opponentTyping', () => { if (isMounted) setIsOpponentTyping(true); });
+    newSocket.on('opponentStoppedTyping', () => { if (isMounted) setIsOpponentTyping(false); });
 
     newSocket.on('opponentDisconnected', () => { if (isMounted) setDisconnectCountdown(30); });
 
@@ -182,5 +182,5 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketR
     }
   }, [disconnectCountdown]);
 
-  return { socket, phase, setPhase, gameState, playerSymbol, gameId, status, opponentName, getEmoji };
+  return { socket, phase, setPhase, gameState, playerSymbol, gameId, status, opponentName, chatMessages, isOpponentTyping, getEmoji };
 };

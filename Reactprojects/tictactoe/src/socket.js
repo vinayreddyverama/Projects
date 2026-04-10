@@ -190,26 +190,63 @@ module.exports = (io) => {
       }
     });
 
-    socket.on('resignSession', () => {
-      socket.isSwitching = true;
+    socket.on('offerDraw', () => {
+      const gameId = playerToGame.get(socket.id);
+      if (!gameId) return;
+      const game = games.get(gameId);
+      if (!game || game.winner) return;
+
+      const playerSymbol = Object.keys(game.players).find(sym => game.players[sym]?.id === socket.id);
+      if (playerSymbol) {
+        game.drawOffer = playerSymbol;
+        logger.info(`Game ${gameId}: ${playerSymbol} offered a draw.`);
+        io.to(`game-${gameId}`).emit('gameUpdate', game.getState());
+      }
+    });
+
+    socket.on('declineDraw', () => {
+      const gameId = playerToGame.get(socket.id);
+      if (!gameId) return;
+      const game = games.get(gameId);
+      if (!game || !game.drawOffer) return;
+
+      game.drawOffer = null;
+      logger.info(`Game ${gameId}: Draw offer declined.`);
+      io.to(`game-${gameId}`).emit('gameUpdate', game.getState());
+    });
+
+    socket.on('acceptDraw', () => {
+      const gameId = playerToGame.get(socket.id);
+      if (!gameId) return;
+      const game = games.get(gameId);
+      if (!game || !game.drawOffer) return;
+
+      const playerSymbol = Object.keys(game.players).find(sym => game.players[sym]?.id === socket.id);
+      // A player can only accept a draw if the offer came from the opponent.
+      if (playerSymbol && game.drawOffer !== playerSymbol) {
+        game.winner = 'draw';
+        game.updateScores();
+        logger.info(`Game ${gameId}: Draw offer accepted. Game ended in a draw.`);
+        io.to(`game-${gameId}`).emit('gameEnd', game.getState());
+      }
+    });
+
+    socket.on('resignGame', () => {
       const gameId = playerToGame.get(socket.id);
       if (gameId) {
         const game = games.get(gameId);
         if (game && !game.winner) {
           const playerSymbols = Object.keys(game.players);
           const playerSymbol = playerSymbols.find(sym => game.players[sym]?.id === socket.id);
-          const opponentSymbol = playerSymbols.find(sym => sym !== playerSymbol && game.players[sym]);
+          const opponentSymbol = playerSymbols.find(sym => game.players[sym] && game.players[sym].id !== socket.id);
 
           if (playerSymbol && opponentSymbol) {
             game.winner = opponentSymbol; // Opponent wins
             game.updateScores();
             logger.info(`Game ${gameId}: ${playerSymbol} resigned.`);
-            // Notify opponent they won due to resignation, then they will be moved to summary
-            socket.to(`game-${gameId}`).emit('opponentResigned', game.getState());
+            io.to(`game-${gameId}`).emit('gameEnd', game.getState());
           }
         }
-        // Clean up game for both players
-        games.delete(gameId);
       }
     });
 

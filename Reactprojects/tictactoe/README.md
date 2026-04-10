@@ -1,13 +1,16 @@
-# Tic Tac Toe Multiplayer
+# Game Hub - Multiplayer Classic Games
 
-A real-time multiplayer Tic Tac Toe game using React and Socket.IO.
+A real-time multiplayer game hub featuring classic board games, built with React and Socket.IO.
 
 ## Features
 
-- 2-player Tic Tac Toe game
+- **Four Games in One**: Play Tic-Tac-Toe, Connect 4, Sequence, and Chess.
+- **Real-time Multiplayer**: Challenge friends and see their moves instantly with Socket.IO.
+- **Session-Based Scoring**: Scores are tracked across all games for the duration of a session.
+- **Persistent Player Names**: Enter your name once and play across all games.
 - Real-time synchronization using Socket.IO
-- Player name input
-- Live game updates
+- **Responsive Design**: Play on any device, from desktop to mobile.
+- **Background Music**: Optional ambient music to enhance the gameplay experience.
 
 ## How to Run
 
@@ -27,11 +30,12 @@ A real-time multiplayer Tic Tac Toe game using React and Socket.IO.
 
 5. Play the game! The moves will sync between both players.
 
-## Game Rules
+## Games Included
 
-- Player 1 is X, Player 2 is O
-- First to get 3 in a row (horizontally, vertically, or diagonally) wins
-- If all 9 squares are filled without a winner, it's a draw
+- **Tic-Tac-Toe**: The classic 3x3 grid game.
+- **Connect 4**: Drop your checkers and connect four in a row.
+- **Sequence**: A 10x10 board where you must get five in a row.
+- **Chess**: The ultimate game of strategy.
 
 ## Technologies Used
 

@@ -5,6 +5,7 @@ import './GameHub.css';
 import TicTacToe from './TicTacToe';
 import Connect4 from './Connect4';
 import Sequence from './Sequence';
+// Note: The component is imported from 'Chess.js' (PascalCase) to follow React conventions.
 import Chess from './Chess';
 
 function App() {
@@ -44,15 +45,15 @@ function App() {
   const renderScore = (game) => {
     const score = scores[game];
     if (!score.played && score.wins === 0 && score.losses === 0 && score.draws === 0) return null;
-    
+
     const isWinsHigh = score.wins > score.losses;
     const isLossesHigh = score.losses > score.wins;
-    
+
     return (
       <span className="sidebar-score">
-        <span style={{ color: isWinsHigh ? '#4ade80' : (score.wins === score.losses ? '#cbd5e1' : '#ff6b6b') }}>{score.wins}W</span>
+        <span style={{ color: isWinsHigh ? '#4ade80' : isLossesHigh ? '#ff6b6b' : '#cbd5e1' }}>{score.wins}W</span>
         {' - '}
-        <span style={{ color: isLossesHigh ? '#4ade80' : (score.wins === score.losses ? '#cbd5e1' : '#ff6b6b') }}>{score.losses}L</span>
+        <span style={{ color: isLossesHigh ? '#ff6b6b' : isWinsHigh ? '#4ade80' : '#cbd5e1' }}>{score.losses}L</span>
         {score.draws > 0 && <span style={{ color: '#cbd5e1' }}> - {score.draws}D</span>}
       </span>
     );
@@ -150,7 +151,7 @@ function App() {
     const overallWins = tt.wins + c4.wins + seq.wins + chess.wins;
     const overallLosses = tt.losses + c4.losses + seq.losses + chess.losses;
     const overallDraws = tt.draws + c4.draws + seq.draws + chess.draws;
-    const overallTotal = ttTotal + c4Total + seqTotal;
+    const overallTotal = ttTotal + c4Total + seqTotal + chessTotal;
     const overallWinRate = overallTotal > 0 ? ((overallWins / overallTotal) * 100).toFixed(1) : 0;
     const ttWinRate = ttTotal > 0 ? ((tt.wins / ttTotal) * 100).toFixed(1) : 0;
 
@@ -303,29 +304,25 @@ function App() {
           <Connect4 
             onScoreUpdate={handleConnect4Score} globalPlayerName={globalPlayerName} 
             setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType} activeSocketRef={activeSocketRef}
           />
         ) : activeTab === 'sequence' ? (
           <Sequence 
             onScoreUpdate={handleSequenceScore} globalPlayerName={globalPlayerName} 
             setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType} activeSocketRef={activeSocketRef}
           />
         ) : activeTab === 'chess' ? (
           <Chess
             onScoreUpdate={handleChessScore} globalPlayerName={globalPlayerName}
             setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType} activeSocketRef={activeSocketRef}
           />
         ) : (
           <TicTacToe 
             onScoreUpdate={handleTicTacToeScore} globalPlayerName={globalPlayerName} 
             setGlobalPlayerName={setGlobalPlayerName} onPlayMusic={playMusic}
-            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType}
-            onResign={() => handleEndSession('resign')} activeSocketRef={activeSocketRef}
+            onOpponentLeft={handleOpponentLeft} setLockedGameType={setLockedGameType} activeSocketRef={activeSocketRef}
           />
         )}
       </div>

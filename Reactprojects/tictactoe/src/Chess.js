@@ -11,7 +11,7 @@ const pieceMap = {
   P: '♟', N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚',
 };
 
-const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef, onResign }) => {
+const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
     opponentName, chatMessages, isOpponentTyping, getEmoji
@@ -26,6 +26,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
   const [possibleMoves, setPossibleMoves] = useState([]);
   const [board, setBoard] = useState([]);
   const [promotionData, setPromotionData] = useState(null);
+  const [drawOfferFrom, setDrawOfferFrom] = useState(null);
   const [lastMove, setLastMove] = useState(null);
   const [kingInCheckSquare, setKingInCheckSquare] = useState(null);
 
@@ -76,6 +77,9 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     } else {
       setKingInCheckSquare(null);
     }
+
+    // Update draw offer status
+    setDrawOfferFrom(gameState?.drawOffer || null);
   }, [gameState, chess]);
 
   const playSendSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3').play();
@@ -182,6 +186,30 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     }
   };
 
+  const handleOfferDraw = () => {
+    if (socket) {
+      socket.emit('offerDraw');
+    }
+  };
+
+  const handleDeclineDraw = () => {
+    if (socket) {
+      socket.emit('declineDraw');
+    }
+  };
+
+  const handleAcceptDraw = () => {
+    if (socket) {
+      socket.emit('acceptDraw');
+    }
+  };
+
+  const handleResign = () => {
+    if (socket && window.confirm('Are you sure you want to resign?')) {
+      socket.emit('resignGame');
+    }
+  };
+
   const handlePromotion = (piece) => {
     if (!promotionData) return;
     const move = { ...promotionData, promotion: piece };
@@ -257,13 +285,27 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
             </div>
             {!gameState.isGameOver && phase === 'playing' && (
               <div className="ingame-actions">
-                <button onClick={onResign} className="ingame-btn resign">
+                <button onClick={handleResign} className="ingame-btn resign">
                   🏳️ Resign
                 </button>
-                {/* Note: A full draw offer feature requires more server logic (offer, accept, decline) */}
-                <button className="ingame-btn draw" disabled title="Draw offer feature coming soon!">
-                  🤝 Offer Draw
-                </button>
+                {drawOfferFrom === (playerSymbol === 'w' ? 'b' : 'w') ? (
+                  <>
+                    <button onClick={handleAcceptDraw} className="ingame-btn accept-draw">
+                      Accept Draw
+                    </button>
+                    <button onClick={handleDeclineDraw} className="ingame-btn decline-draw">
+                      Decline
+                    </button>
+                  </>
+                ) : (
+                  <button 
+                    onClick={handleOfferDraw} 
+                    className="ingame-btn draw" 
+                    disabled={drawOfferFrom !== null || gameState.turn !== playerSymbol}
+                  >
+                    {drawOfferFrom === playerSymbol ? 'Draw Offered' : '🤝 Offer Draw'}
+                  </button>
+                )}
               </div>
             )}
           </div>

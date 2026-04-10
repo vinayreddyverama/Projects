@@ -7,6 +7,7 @@ class ChessGame {
     this.chess = new Chess();
     this.players = { w: null, b: null }; // w for white, b for black
     this.winner = null; // 'w', 'b', or 'draw'
+    this.drawOffer = null; // Tracks which player ('w' or 'b') has offered a draw
   }
 
   addPlayer(socketId, name) {
@@ -50,6 +51,9 @@ class ChessGame {
       const result = this.chess.move(move);
       if (result === null) return false; // Invalid move
 
+      // Any valid move voids a previous draw offer.
+      this.drawOffer = null;
+
       this.checkGameOver();
       return true;
     } catch (e) {
@@ -86,6 +90,7 @@ class ChessGame {
   reset() {
     this.chess.reset();
     this.winner = null;
+    this.drawOffer = null;
   }
 
   getState() {
@@ -98,6 +103,7 @@ class ChessGame {
       turn: this.chess.turn(),
       players: this.players,
       winner: this.winner,
+      drawOffer: this.drawOffer,
       gameId: this.id,
       type: this.type,
     };

@@ -49,7 +49,7 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       hasAutoJoined.current = true;
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(globalPlayerName);
-      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'connect4', requestedGameId: null });
+      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'connect4' });
     }
   }, [socket, globalPlayerName, phase, onPlayMusic]);
 
@@ -59,7 +59,7 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       if (setGlobalPlayerName) setGlobalPlayerName(playerName.trim());
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(playerName.trim());
-      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'connect4', requestedGameId: null });
+      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'connect4' });
     }
   };
 

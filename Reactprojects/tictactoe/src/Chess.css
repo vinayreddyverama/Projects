@@ -141,6 +141,20 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+.ingame-btn.accept-draw {
+  background-color: #2ecc71;
+  color: white;
+}
+.ingame-btn.accept-draw:hover {
+  background-color: #27ae60;
+}
+.ingame-btn.decline-draw {
+  background-color: #95a5a6;
+  color: white;
+}
+.ingame-btn.decline-draw:hover {
+  background-color: #7f8c8d;
+}
 
 /* ==================== PROMOTION MODAL ==================== */
 .promotion-overlay {

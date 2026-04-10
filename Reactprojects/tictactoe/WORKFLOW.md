@@ -9,7 +9,8 @@ The application has been modularized and upgraded into a fully networked multipl
 - **`TicTacToe.js`**: Contains the Socket.IO client logic and React UI for Tic Tac Toe (using 'X' and 'O').
 - **`Connect4.js`**: Contains the Socket.IO client logic and React UI for Connect 4 (using 🍎 and 🥭 emojis).
 - **`Sequence.js`**: Contains the Socket.IO client logic and React UI for Sequence 5-in-a-row (using 🔴 and 🟡 emojis).
-- **`Game.js`, `Connect4Game.js`, & `SequenceGame.js` (Backend)**: The authoritative rule engines running on the Node.js server that validate all moves and determine winners.
+- **`Chess.js`**: Contains the Socket.IO client logic and React UI for Chess.
+- **`Game.js`, `Connect4Game.js`, `SequenceGame.js`, & `ChessGame.js` (Backend)**: The authoritative rule engines running on the Node.js server that validate all moves and determine winners.
 
 ## 2. Component Workflow Diagram
 
@@ -23,11 +24,13 @@ graph TD
         TTT[TicTacToe.js<br>UI & Chat]
         C4[Connect4.js<br>UI & Chat]
         Seq[Sequence.js<br>UI & Chat]
+        Chess[Chess.js<br>UI & Chat]
         Summary[Summary Screen<br>Scores & Confetti]
         
         App -->|Active Tab: tictactoe| TTT
         App -->|Active Tab: connect4| C4
         App -->|Active Tab: sequence| Seq
+        App -->|Active Tab: chess| Chess
         App -->|Active Tab: summary| Summary
     end
 
@@ -37,16 +40,19 @@ graph TD
         TTTEngine[Game.js<br>Tic Tac Toe Rules]
         C4Engine[Connect4Game.js<br>Connect 4 Rules]
         SeqEngine[SequenceGame.js<br>Sequence Rules]
+        ChessEngine[ChessGame.js<br>Chess Rules]
         
         Socket <-->|Validates Moves| TTTEngine
         Socket <-->|Validates Moves| C4Engine
         Socket <-->|Validates Moves| SeqEngine
+        Socket <-->|Validates Moves| ChessEngine
     end
 
     %% Connections
     TTT <-->|WebSockets| Socket
     C4 <-->|WebSockets| Socket
     Seq <-->|WebSockets| Socket
+    Chess <-->|WebSockets| Socket
 ```
 
 ## 3. Multiplayer Matchmaking Sequence (Tic Tac Toe)

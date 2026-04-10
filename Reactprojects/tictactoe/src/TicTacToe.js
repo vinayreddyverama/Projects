@@ -48,7 +48,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
       hasAutoJoined.current = true;
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(globalPlayerName);
-      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'tictactoe', requestedGameId: null });
+      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'tictactoe' });
     }
   }, [socket, globalPlayerName, phase, onPlayMusic]);
 
@@ -58,7 +58,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
       if (setGlobalPlayerName) setGlobalPlayerName(playerName.trim());
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(playerName.trim());
-      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'tictactoe', requestedGameId: null });
+      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'tictactoe' });
     }
   };
 

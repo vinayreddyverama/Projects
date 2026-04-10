@@ -49,7 +49,7 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       hasAutoJoined.current = true;
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(globalPlayerName);
-      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'sequence', requestedGameId: null });
+      socket.emit('playerJoin', { playerName: globalPlayerName, gameType: 'sequence' });
     }
   }, [socket, globalPlayerName, phase, onPlayMusic]);
 
@@ -59,7 +59,7 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       if (setGlobalPlayerName) setGlobalPlayerName(playerName.trim());
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(playerName.trim());
-      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'sequence', requestedGameId: null });
+      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'sequence' });
     }
   };
 

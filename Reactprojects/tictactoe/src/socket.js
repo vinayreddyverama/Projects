@@ -2,6 +2,7 @@ const logger = require('./logger');
 const Game = require('./Game');
 const Connect4Game = require('./Connect4Game');
 const SequenceGame = require('./SequenceGame');
+const ChessGame = require('./ChessGame');
 
 const games = new Map();
 const playerToGame = new Map();
@@ -63,6 +64,7 @@ function findOrCreateGame(socketId, playerName, gameType, requestedGameId) {
   const gameId = ++gameCounter;
   const game = gameType === 'connect4' ? new Connect4Game(gameId) : 
                gameType === 'sequence' ? new SequenceGame(gameId) : 
+               gameType === 'chess' ? new ChessGame(gameId) :
                new Game(gameId);
   const symbol = game.addPlayer(socketId, playerName);
   games.set(gameId, game);

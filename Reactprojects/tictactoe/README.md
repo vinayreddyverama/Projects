@@ -16,21 +16,16 @@ A real-time multiplayer Tic Tac Toe game using React and Socket.IO.
    npm install
    ```
 
-2. Start the server:
-   ```
-   node server.js
-   ```
-
-3. In a new terminal, start the React app:
+2. Start the application (server and client):
    ```
    npm start
    ```
 
-4. Open two browser tabs/windows to `http://localhost:3000`
+3. Open two browser tabs/windows to `http://localhost:3000`
 
-5. In each tab, enter a player name when prompted.
+4. In each tab, enter a player name when prompted.
 
-6. Play the game! The moves will sync between both players.
+5. Play the game! The moves will sync between both players.
 
 ## Game Rules
 

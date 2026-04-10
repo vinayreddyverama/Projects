@@ -5,6 +5,7 @@ import './GameHub.css';
 import TicTacToe from './TicTacToe';
 import Connect4 from './Connect4';
 import Sequence from './Sequence';
+import Chess from './Chess';
 
 function App() {
   const [activeTab, setActiveTab] = useState('tictactoe');
@@ -13,7 +14,8 @@ function App() {
   const [scores, setScores] = useState({
     tictactoe: { wins: 0, losses: 0, draws: 0, played: false },
     connect4: { wins: 0, losses: 0, draws: 0, played: false },
-    sequence: { wins: 0, losses: 0, draws: 0, played: false }
+    sequence: { wins: 0, losses: 0, draws: 0, played: false },
+    chess: { wins: 0, losses: 0, draws: 0, played: false }
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -37,6 +39,7 @@ function App() {
   const handleTicTacToeScore = useCallback((wins, losses, draws) => handleScoreUpdate('tictactoe', wins, losses, draws), [handleScoreUpdate]);
   const handleConnect4Score = useCallback((wins, losses, draws) => handleScoreUpdate('connect4', wins, losses, draws), [handleScoreUpdate]);
   const handleSequenceScore = useCallback((wins, losses, draws) => handleScoreUpdate('sequence', wins, losses, draws), [handleScoreUpdate]);
+  const handleChessScore = useCallback((wins, losses, draws) => handleScoreUpdate('chess', wins, losses, draws), [handleScoreUpdate]);
 
   const renderScore = (game) => {
     const score = scores[game];
@@ -76,17 +79,14 @@ function App() {
     setScores({
       tictactoe: { wins: 0, losses: 0, draws: 0, played: false },
       connect4: { wins: 0, losses: 0, draws: 0, played: false },
-      sequence: { wins: 0, losses: 0, draws: 0, played: false }
+      sequence: { wins: 0, losses: 0, draws: 0, played: false },
+      chess: { wins: 0, losses: 0, draws: 0, played: false }
     });
     setGlobalPlayerName('');
     setLockedGameType(null);
   }, []);
 
   const handleOpponentLeft = useCallback((reason, targetGame) => {
-    if (activeSocketRef.current) {
-      activeSocketRef.current.emit('switchGame', 'summary');
-    }
-    
     // Delay unmounting to ensure WebSocket packets are successfully sent
     setTimeout(() => {
       if (reason === 'end') {
@@ -130,12 +130,14 @@ function App() {
     const tt = scores.tictactoe;
     const c4 = scores.connect4;
     const seq = scores.sequence;
+    const chess = scores.chess;
     const ttTotal = tt.wins + tt.losses + tt.draws;
     const c4Total = c4.wins + c4.losses + c4.draws;
     const seqTotal = seq.wins + seq.losses + seq.draws;
-    const overallWins = tt.wins + c4.wins + seq.wins;
-    const overallLosses = tt.losses + c4.losses + seq.losses;
-    const overallDraws = tt.draws + c4.draws + seq.draws;
+    const chessTotal = chess.wins + chess.losses + chess.draws;
+    const overallWins = tt.wins + c4.wins + seq.wins + chess.wins;
+    const overallLosses = tt.losses + c4.losses + seq.losses + chess.losses;
+    const overallDraws = tt.draws + c4.draws + seq.draws + chess.draws;
     const overallTotal = ttTotal + c4Total + seqTotal;
     const overallWinRate = overallTotal > 0 ? ((overallWins / overallTotal) * 100).toFixed(1) : 0;
     const ttWinRate = ttTotal > 0 ? ((tt.wins / ttTotal) * 100).toFixed(1) : 0;
@@ -184,6 +186,12 @@ function App() {
             <p>Games Played: <strong>{scores.sequence.wins + scores.sequence.losses + scores.sequence.draws}</strong></p>
             <p>Score: <strong style={{color: '#4ade80'}}>{scores.sequence.wins}W</strong> - <strong style={{color: '#ff6b6b'}}>{scores.sequence.losses}L</strong> - <strong>{scores.sequence.draws}D</strong></p>
             <p>Win Rate: <strong>{( (scores.sequence.wins + scores.sequence.losses + scores.sequence.draws) > 0 ? ((scores.sequence.wins / (scores.sequence.wins + scores.sequence.losses + scores.sequence.draws)) * 100).toFixed(1) : 0)}%</strong></p>
+          </div>
+          <div className="summary-card">
+            <h3>Chess</h3>
+            <p>Games Played: <strong>{chessTotal}</strong></p>
+            <p>Score: <strong style={{color: '#4ade80'}}>{chess.wins}W</strong> - <strong style={{color: '#ff6b6b'}}>{chess.losses}L</strong> - <strong>{chess.draws}D</strong></p>
+            <p>Win Rate: <strong>{(chessTotal > 0 ? ((chess.wins / chessTotal) * 100).toFixed(1) : 0)}%</strong></p>
           </div>
         </div>
         <button className="reset-btn" onClick={resetSession} style={{ marginTop: '40px', padding: '15px 40px', fontSize: '1.3em' }}>
@@ -257,6 +265,14 @@ function App() {
             <span>Sequence</span>
             {renderScore('sequence')}
           </button>
+          <button 
+            className={`sidebar-btn ${activeTab === 'chess' ? 'active' : ''}`}
+            onClick={() => setActiveTab('chess')}
+            disabled={lockedGameType && lockedGameType !== 'chess'}
+          >
+            <span>Chess</span>
+            {renderScore('chess')}
+          </button>
           <button className="sidebar-btn" onClick={toggleMusic}>
             <span>{isPlaying ? '🔊 Music On' : '🔈 Music Off'}</span>
           </button>
@@ -286,6 +302,16 @@ function App() {
             onScoreUpdate={handleSequenceScore} 
             globalPlayerName={globalPlayerName} 
             setGlobalPlayerName={setGlobalPlayerName} 
+            onPlayMusic={playMusic}
+            onOpponentLeft={handleOpponentLeft}
+            setLockedGameType={setLockedGameType}
+            activeSocketRef={activeSocketRef}
+          />
+        ) : activeTab === 'chess' ? (
+          <Chess
+            onScoreUpdate={handleChessScore}
+            globalPlayerName={globalPlayerName}
+            setGlobalPlayerName={setGlobalPlayerName}
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
             setLockedGameType={setLockedGameType}

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import logger from './logger';
 
-export const useSocket = (gameType, onScoreUpdate, onOpponentLeft) => {
+export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketRef) => {
   const [socket, setSocket] = useState(null);
   const [phase, setPhase] = useState('nameInput');
   const [gameState, setGameState] = useState(null);
@@ -13,12 +13,12 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft) => {
   const [chatMessages, setChatMessages] = useState([]);
   const [isOpponentTyping, setIsOpponentTyping] = useState(false);
   const [disconnectCountdown, setDisconnectCountdown] = useState(null);
-  const activeSocketRef = useRef(null);
 
   const getEmoji = (sym) => {
     if (gameType === 'tictactoe') return sym;
     if (gameType === 'connect4') return sym === 'Red' ? '🍎' : '🥭';
     if (gameType === 'sequence') return sym === 'P1' ? '🔴' : '🟡';
+    if (gameType === 'chess') return sym === 'w' ? '♔' : '♚';
     return '';
   };
 
@@ -54,6 +54,13 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft) => {
 
     newSocket.on('connect', () => {
       if (isMounted) logger.connection(newSocket.id);
+    });
+
+    newSocket.on('nameError', (message) => {
+      if (isMounted) {
+        alert(message);
+        setPhase('nameInput');
+      }
     });
 
     newSocket.on('playerAssigned', (data) => {
@@ -113,6 +120,12 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft) => {
 
     newSocket.on('opponentDisconnected', () => { if (isMounted) setDisconnectCountdown(30); });
 
+    newSocket.on('sessionEnded', () => {
+      if (isMounted && onOpponentLeft) {
+        onOpponentLeft('end');
+      }
+    });
+
     newSocket.on('opponentLeft', () => {
       if (isMounted) {
         setDisconnectCountdown(null);
@@ -125,8 +138,25 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft) => {
     return () => {
       isMounted = false;
       newSocket.disconnect();
+      if (activeSocketRef && activeSocketRef.current === newSocket) {
+        activeSocketRef.current = null;
+      }
     };
-  }, [gameType, onScoreUpdate, onOpponentLeft]);
+  }, [gameType, onScoreUpdate, onOpponentLeft, activeSocketRef]);
 
-  return { socket, phase, setPhase, gameState, playerSymbol, gameId, status, opponentName, chatMessages, setChatMessages, isOpponentTyping, disconnectCountdown, setDisconnectCountdown, getEmoji };
+  useEffect(() => {
+    if (disconnectCountdown === null) return;
+
+    if (disconnectCountdown > 0) {
+      setStatus(`⏳ Opponent disconnected... (Waiting ${disconnectCountdown}s)`);
+      const timer = setTimeout(() => {
+        setDisconnectCountdown((prev) => (prev !== null ? prev - 1 : null));
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setStatus('Opponent failed to reconnect.');
+    }
+  }, [disconnectCountdown]);
+
+  return { socket, phase, setPhase, gameState, playerSymbol, gameId, status, opponentName, chatMessages, isOpponentTyping, disconnectCountdown, getEmoji };
 };

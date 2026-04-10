@@ -6,7 +6,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
 }
 
 /* ==================== WELCOME SCREEN ==================== */
@@ -385,16 +384,13 @@
 /* ==================== RESPONSIVE OVERRIDES ==================== */
 @media (max-width: 900px) {
   .game-layout {
-    padding-right: 0; /* Remove padding to allow stacking */
+    flex-direction: column;
+    align-items: center;
   }
-  .chat-container {
-    position: relative; /* Un-fix the sidebar */
+  .game-screen, .chat-container {
+    flex: none;
     width: 100%;
     max-width: 700px;
-    height: 450px;
-    margin: 30px auto 0 auto;
-    border-radius: 20px;
-    animation: slideUp 0.5s ease-out;
   }
 }
 

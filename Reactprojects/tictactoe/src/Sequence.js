@@ -9,11 +9,10 @@ const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
-    opponentName, chatMessages, setChatMessages, isOpponentTyping, disconnectCountdown, setDisconnectCountdown, getEmoji
-  } = useSocket('sequence', onScoreUpdate, onOpponentLeft);
+    opponentName, chatMessages, isOpponentTyping, disconnectCountdown, getEmoji
+  } = useSocket('sequence', onScoreUpdate, onOpponentLeft, activeSocketRef);
 
   const [playerName, setPlayerName] = useState(globalPlayerName || '');
-  const [joinGameId, setJoinGameId] = useState('');
   const [currentMessage, setCurrentMessage] = useState('');
   const typingTimeoutRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -31,6 +30,12 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
     audio.play().catch(() => {});
   };
 
+  const playMoveSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  };
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     if (chatMessages.length > 0) {
@@ -38,19 +43,6 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       if (lastMsg.sender !== playerSymbol) playReceiveSound();
     }
   }, [chatMessages, isOpponentTyping, playerSymbol]);
-
-  useEffect(() => {
-    if (disconnectCountdown === null) return;
-    if (disconnectCountdown > 0) {
-      setStatus(`⏳ Opponent disconnected... (Waiting ${disconnectCountdown}s)`);
-      const timer = setTimeout(() => {
-        setDisconnectCountdown((prev) => prev - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setStatus('⏳ Opponent disconnected... (0s)');
-    }
-  }, [disconnectCountdown]);
 
   useEffect(() => {
     if (socket && globalPlayerName && phase === 'nameInput' && !hasAutoJoined.current) {
@@ -67,12 +59,13 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       if (setGlobalPlayerName) setGlobalPlayerName(playerName.trim());
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(playerName.trim());
-      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'sequence', requestedGameId: parseInt(joinGameId) || null });
+      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'sequence', requestedGameId: null });
     }
   };
 
   const handleCellClick = (rIndex, cIndex) => {
     if (!gameState || gameState.currentPlayer !== playerSymbol || gameState.winner) return;
+    playMoveSound();
     socket.emit('playerMove', { index: { r: rIndex, c: cIndex } });
   };
 
@@ -112,15 +105,6 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
     setPhase('playing');
   };
 
-  useEffect(() => {
-    if (socket) {
-      socket.on('nameError', (message) => {
-        alert(message);
-        setPhase('nameInput');
-      });
-    }
-  }, [socket, setPhase]);
-
   if (phase === 'nameInput') {
     if (globalPlayerName) {
       return (
@@ -140,14 +124,6 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
           <p className="subtitle">Enter your name to join a game</p>
           <form onSubmit={handleNameSubmit}>
             <input type="text" placeholder="Your name" value={playerName} onChange={(e) => setPlayerName(e.target.value)} maxLength="20" disabled={!socket} autoFocus />
-            <input
-              type="number"
-              placeholder="Game ID to Rejoin (optional)"
-              value={joinGameId}
-              onChange={(e) => setJoinGameId(e.target.value)}
-              disabled={!socket}
-              style={{ marginTop: '5px' }}
-            />
             <button type="submit" disabled={!playerName.trim() || !socket}>{socket ? 'Start Game' : 'Connecting...'}</button>
           </form>
         </div>

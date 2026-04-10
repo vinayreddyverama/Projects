@@ -13,8 +13,8 @@ class Connect4Game {
   addPlayer(socketId, name) {
     const initialScore = { wins: 0, losses: 0, draws: 0, total: 0 };
     
-    if ((this.players.Red && this.players.Red.name === name) || 
-        (this.players.Yellow && this.players.Yellow.name === name)) {
+    if ((this.players.Red && this.players.Red.name.toLowerCase() === name.toLowerCase()) || 
+        (this.players.Yellow && this.players.Yellow.name.toLowerCase() === name.toLowerCase())) {
       return null;
     }
 

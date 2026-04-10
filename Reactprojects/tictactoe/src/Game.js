@@ -11,8 +11,8 @@ class Game {
   addPlayer(socketId, name) {
     const initialScore = { wins: 0, losses: 0, draws: 0, total: 0 };
 
-    if ((this.players.X && this.players.X.name === name) || 
-        (this.players.O && this.players.O.name === name)) {
+    if ((this.players.X && this.players.X.name.toLowerCase() === name.toLowerCase()) || 
+        (this.players.O && this.players.O.name.toLowerCase() === name.toLowerCase())) {
       return null; // Name already taken in this game
     }
 

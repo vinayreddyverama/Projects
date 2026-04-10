@@ -13,8 +13,8 @@ class SequenceGame {
   addPlayer(socketId, name) {
     const initialScore = { wins: 0, losses: 0, draws: 0, total: 0 };
 
-    if ((this.players.P1 && this.players.P1.name === name) || 
-        (this.players.P2 && this.players.P2.name === name)) {
+    if ((this.players.P1 && this.players.P1.name.toLowerCase() === name.toLowerCase()) || 
+        (this.players.P2 && this.players.P2.name.toLowerCase() === name.toLowerCase())) {
       return null;
     }
 

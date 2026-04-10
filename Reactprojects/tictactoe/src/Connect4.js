@@ -9,11 +9,10 @@ const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
-    opponentName, chatMessages, setChatMessages, isOpponentTyping, disconnectCountdown, setDisconnectCountdown, getEmoji
-  } = useSocket('connect4', onScoreUpdate, onOpponentLeft);
+    opponentName, chatMessages, isOpponentTyping, disconnectCountdown, getEmoji
+  } = useSocket('connect4', onScoreUpdate, onOpponentLeft, activeSocketRef);
 
   const [playerName, setPlayerName] = useState(globalPlayerName || '');
-  const [joinGameId, setJoinGameId] = useState('');
   const [currentMessage, setCurrentMessage] = useState('');
   const typingTimeoutRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -31,6 +30,12 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
     audio.play().catch(() => {});
   };
 
+  const playMoveSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.volume = 0.5;
+    audio.play().catch(() => {});
+  };
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     if (chatMessages.length > 0) {
@@ -38,19 +43,6 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       if (lastMsg.sender !== playerSymbol) playReceiveSound();
     }
   }, [chatMessages, isOpponentTyping, playerSymbol]);
-
-  useEffect(() => {
-    if (disconnectCountdown === null) return;
-    if (disconnectCountdown > 0) {
-      setStatus(`⏳ Opponent disconnected... (Waiting ${disconnectCountdown}s)`);
-      const timer = setTimeout(() => {
-        setDisconnectCountdown((prev) => prev - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setStatus('⏳ Opponent disconnected... (0s)');
-    }
-  }, [disconnectCountdown]);
 
   useEffect(() => {
     if (socket && globalPlayerName && phase === 'nameInput' && !hasAutoJoined.current) {
@@ -67,7 +59,7 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       if (setGlobalPlayerName) setGlobalPlayerName(playerName.trim());
       if (onPlayMusic) onPlayMusic();
       logger.playerJoin(playerName.trim());
-      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'connect4', requestedGameId: parseInt(joinGameId) || null });
+      socket.emit('playerJoin', { playerName: playerName.trim(), gameType: 'connect4', requestedGameId: null });
     }
   };
 
@@ -80,6 +72,7 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
       return;
     }
 
+    playMoveSound();
     socket.emit('playerMove', { index: colIndex });
   };
 
@@ -121,15 +114,6 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
     setPhase('playing');
   };
 
-  useEffect(() => {
-    if (socket) {
-      socket.on('nameError', (message) => {
-        alert(message);
-        setPhase('nameInput');
-      });
-    }
-  }, [socket, setPhase]);
-
   if (phase === 'nameInput') {
     if (globalPlayerName) {
       return (
@@ -157,14 +141,6 @@ const Connect4 = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
               maxLength="20"
               disabled={!socket}
               autoFocus
-            />
-            <input
-              type="number"
-              placeholder="Game ID to Rejoin (optional)"
-              value={joinGameId}
-              onChange={(e) => setJoinGameId(e.target.value)}
-              disabled={!socket}
-              style={{ marginTop: '5px' }}
             />
             <button type="submit" disabled={!playerName.trim() || !socket}>
               {socket ? 'Start Game' : 'Connecting...'}

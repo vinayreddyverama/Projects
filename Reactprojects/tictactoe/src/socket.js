@@ -188,6 +188,29 @@ module.exports = (io) => {
       }
     });
 
+    socket.on('resignSession', () => {
+      socket.isSwitching = true;
+      const gameId = playerToGame.get(socket.id);
+      if (gameId) {
+        const game = games.get(gameId);
+        if (game && !game.winner) {
+          const playerSymbols = Object.keys(game.players);
+          const playerSymbol = playerSymbols.find(sym => game.players[sym]?.id === socket.id);
+          const opponentSymbol = playerSymbols.find(sym => sym !== playerSymbol && game.players[sym]);
+
+          if (playerSymbol && opponentSymbol) {
+            game.winner = opponentSymbol; // Opponent wins
+            game.updateScores();
+            logger.info(`Game ${gameId}: ${playerSymbol} resigned.`);
+            // Notify opponent they won due to resignation, then they will be moved to summary
+            socket.to(`game-${gameId}`).emit('opponentResigned', game.getState());
+          }
+        }
+        // Clean up game for both players
+        games.delete(gameId);
+      }
+    });
+
     socket.on('gameReset', () => {
       const gameId = playerToGame.get(socket.id);
       if (!gameId) return;

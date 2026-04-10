@@ -12,7 +12,7 @@ const pieceMap = {
   P: '♟', N: '♞', B: '♝', R: '♜', Q: '♛', K: '♚',
 };
 
-const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
+const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef, onResign }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
     opponentName, chatMessages, isOpponentTyping, getEmoji
@@ -26,6 +26,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [possibleMoves, setPossibleMoves] = useState([]);
   const [board, setBoard] = useState([]);
+  const [promotionData, setPromotionData] = useState(null);
   const [lastMove, setLastMove] = useState(null);
   const [kingInCheckSquare, setKingInCheckSquare] = useState(null);
 
@@ -123,14 +124,16 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     if (selectedSquare) {
       // If the clicked square is a valid move, make the move
       if (possibleMoves.includes(squareName)) {
-        const move = { from: selectedSquare, to: squareName };
-        // Auto-promote to Queen for simplicity. A professional UI could have a selection modal here.
         const fromPiece = chess.get(selectedSquare);
-        if (fromPiece.type === 'p' && (squareName[1] === '8' || squareName[1] === '1')) {
-          move.promotion = 'q';
+        const isPromotion = fromPiece.type === 'p' && (squareName[1] === '8' || squareName[1] === '1');
+
+        if (isPromotion) {
+          setPromotionData({ from: selectedSquare, to: squareName });
+        } else {
+          const move = { from: selectedSquare, to: squareName };
+          socket.emit('playerMove', { index: move });
+          playMoveSound();
         }
-        socket.emit('playerMove', { index: move });
-        playMoveSound();
         setSelectedSquare(null);
         setPossibleMoves([]);
       } else if (piece && piece.color === playerSymbol) {
@@ -167,6 +170,14 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     sendMessage(currentMessage);
     setCurrentMessage('');
     if (socket) socket.emit('stopTyping');
+  };
+
+  const handlePromotion = (piece) => {
+    if (!promotionData) return;
+    const move = { ...promotionData, promotion: piece };
+    socket.emit('playerMove', { index: move });
+    playMoveSound();
+    setPromotionData(null);
   };
 
   const handlePlayAgain = () => {
@@ -270,6 +281,13 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
               <button onClick={handlePlayAgain} className="reset-btn">Play Again</button>
             </div>
           )}
+          {!gameState.isGameOver && phase === 'playing' && (
+            <div className="game-actions">
+              <button onClick={onResign} className="resign-btn">
+                🏳️ Resign
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="chat-container">
@@ -302,6 +320,19 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
             <button type="submit" className="send-btn">Send</button>
           </form>
         </div>
+        {promotionData && (
+          <div className="promotion-overlay">
+            <div className="promotion-modal">
+              <h3>Promote Pawn to:</h3>
+              <div className="promotion-choices">
+                <button onClick={() => handlePromotion('q')}>{pieceMap[playerSymbol === 'w' ? 'q' : 'Q']}</button>
+                <button onClick={() => handlePromotion('r')}>{pieceMap[playerSymbol === 'w' ? 'r' : 'R']}</button>
+                <button onClick={() => handlePromotion('b')}>{pieceMap[playerSymbol === 'w' ? 'b' : 'B']}</button>
+                <button onClick={() => handlePromotion('n')}>{pieceMap[playerSymbol === 'w' ? 'n' : 'N']}</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

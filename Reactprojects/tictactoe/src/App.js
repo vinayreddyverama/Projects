@@ -114,18 +114,23 @@ function App() {
     audio.play().catch(() => {});
   };
 
-  const handleEndSession = () => {
+  const handleEndSession = (reason = 'end') => {
     playCelebrationSound();
     if (activeSocketRef.current) {
-      activeSocketRef.current.emit('endSession');
-      setNotification('⚠️ The session was ended by you.');
+      if (reason === 'resign') {
+        activeSocketRef.current.emit('resignSession');
+        setNotification('⚠️ You resigned. The session has ended.');
+      } else {
+        activeSocketRef.current.emit('endSession');
+        setNotification('⚠️ The session was ended by you.');
+      }
       setTimeout(() => {
         handleTabChange('summary');
       }, 100);
       return;
     }
     // Fallback for when there is no active socket
-    setNotification('⚠️ The session was ended by you.');
+    setNotification(reason === 'resign' ? '⚠️ You resigned. The session has ended.' : '⚠️ The session was ended by you.');
     handleTabChange('summary');
   };
 
@@ -282,7 +287,7 @@ function App() {
         </div>
         <button 
           className={`sidebar-btn end-btn ${activeTab === 'summary' ? 'active' : ''}`}
-          onClick={handleEndSession}
+          onClick={() => handleEndSession('end')}
         >
           <span>🏁 End & Summary</span>
         </button>
@@ -298,6 +303,7 @@ function App() {
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
             setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')}
             activeSocketRef={activeSocketRef}
           />
         ) : activeTab === 'sequence' ? (
@@ -308,6 +314,7 @@ function App() {
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
             setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')}
             activeSocketRef={activeSocketRef}
           />
         ) : activeTab === 'chess' ? (
@@ -318,6 +325,7 @@ function App() {
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
             setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')}
             activeSocketRef={activeSocketRef}
           />
         ) : (
@@ -328,6 +336,7 @@ function App() {
             onPlayMusic={playMusic}
             onOpponentLeft={handleOpponentLeft}
             setLockedGameType={setLockedGameType}
+            onResign={() => handleEndSession('resign')}
             activeSocketRef={activeSocketRef}
           />
         )}

@@ -131,6 +131,25 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketR
       }
     });
 
+    newSocket.on('opponentResigned', (state) => {
+      if (isMounted) {
+        // First, show the final game state where you are the winner
+        setPhase('finished');
+        setGameState(state);
+        const mySymbol = Object.keys(state.players).find(key => state.players[key]?.id === newSocket.id);
+        const oppSymbol = Object.keys(state.players).find(key => state.players[key]?.id !== newSocket.id);
+        updateStatus(state, mySymbol, state.players[oppSymbol]?.name);
+        checkScoreUpdate(state, newSocket.id);
+
+        // Then, after a short delay, trigger the session end
+        setTimeout(() => {
+          if (onOpponentLeft) {
+            onOpponentLeft('end'); // Use the 'end' reason to show correct message
+          }
+        }, 2500); // 2.5-second delay to see the "You Won by resignation" message
+      }
+    });
+
     newSocket.on('opponentLeft', () => {
       if (isMounted) {
         setDisconnectCountdown(null);

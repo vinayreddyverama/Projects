@@ -3,7 +3,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 20px 0;
+  /* Let the parent flexbox handle margins */
+  margin: 0 auto;
   width: 100%;
   max-width: 600px;
 }
@@ -97,6 +98,94 @@
   -webkit-user-select: none; /* Safari */
   -ms-user-select: none; /* IE 10 and IE 11 */
   user-select: none; /* Standard syntax */
+}
+
+.ingame-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 10px 0 20px 0; /* Space between status and board */
+}
+
+.ingame-btn {
+  padding: 8px 15px;
+  font-size: 0.9em;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ingame-btn.resign {
+  background-color: #f5576c;
+  color: white;
+}
+.ingame-btn.resign:hover {
+  background-color: #d9465a;
+  box-shadow: 0 4px 10px rgba(245, 87, 108, 0.3);
+}
+
+.ingame-btn.draw {
+  background-color: #757575;
+  color: white;
+}
+.ingame-btn.draw:hover:not(:disabled) {
+  background-color: #616161;
+}
+.ingame-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==================== PROMOTION MODAL ==================== */
+.promotion-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.promotion-modal {
+  background: white;
+  padding: 20px 30px;
+  border-radius: 15px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  animation: slideUp 0.3s ease-out;
+}
+
+.promotion-modal h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.promotion-choices {
+  display: flex;
+  gap: 15px;
+}
+
+.promotion-choices button {
+  background: #f0d9b5;
+  border: 2px solid #b58863;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 3em;
+  width: 80px;
+  height: 80px;
+  transition: transform 0.2s;
+}
+
+.promotion-choices button:hover {
+  transform: scale(1.1);
+  background: #e4c8a0;
 }
 
 /* ==================== PROMOTION MODAL ==================== */

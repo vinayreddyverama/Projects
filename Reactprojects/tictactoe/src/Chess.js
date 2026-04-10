@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import logger from './logger';
 import './Chess.css';
 import './TicTacToe.css'; // Reuse layouts
 import { useSocket } from './useSocket';
 import { Chess as ChessJS } from 'chess.js';
-
-const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 
 const pieceMap = {
   p: '♙', n: '♘', b: '♗', r: '♖', q: '♕', k: '♔',
@@ -15,13 +12,10 @@ const pieceMap = {
 const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef, onResign }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
-    opponentName, chatMessages, isOpponentTyping, getEmoji
+    opponentName
   } = useSocket('chess', onScoreUpdate, onOpponentLeft, activeSocketRef);
 
   const [playerName, setPlayerName] = useState(globalPlayerName || '');
-  const [currentMessage, setCurrentMessage] = useState('');
-  const typingTimeoutRef = useRef(null);
-  const chatEndRef = useRef(null);
   const hasAutoJoined = useRef(false);
   const [selectedSquare, setSelectedSquare] = useState(null);
   const [possibleMoves, setPossibleMoves] = useState([]);
@@ -79,14 +73,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     }
   }, [gameState, chess]);
 
-  const playSendSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3').play();
-  const playReceiveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3').play();
   const playMoveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/1648/1648-preview.mp3').play(); // A nice piece-placing sound
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    if (chatMessages.length > 0 && chatMessages[chatMessages.length - 1].sender !== playerSymbol) playReceiveSound();
-  }, [chatMessages, isOpponentTyping, playerSymbol]);
 
   useEffect(() => {
     if (selectedSquare) {
@@ -150,28 +137,6 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     }
   };
 
-  const sendMessage = (message) => {
-    if (socket && message.trim()) {
-      playSendSound();
-      socket.emit('sendMessage', message);
-    }
-  };
-
-  const handleChatChange = (e) => {
-    setCurrentMessage(e.target.value);
-    if (socket) {
-      if (e.target.value.trim() === '') socket.emit('stopTyping');
-      else socket.emit('typing');
-    }
-  };
-
-  const handleChatSubmit = (e) => {
-    e.preventDefault();
-    sendMessage(currentMessage);
-    setCurrentMessage('');
-    if (socket) socket.emit('stopTyping');
-  };
-
   const handlePromotion = (piece) => {
     if (!promotionData) return;
     const move = { ...promotionData, promotion: piece };
@@ -214,7 +179,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
   }
 
   return (
-    <div className="container">
+    <div className="container chess-container">
       <div className="game-layout">
         <div className="game-screen">
           <h1>Chess</h1>
@@ -245,6 +210,17 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
               <p className="status-text">{status}</p>
               <p className="room-info">Game #{gameId}</p>
             </div>
+            {!gameState.isGameOver && phase === 'playing' && (
+              <div className="ingame-actions">
+                <button onClick={onResign} className="ingame-btn resign">
+                  🏳️ Resign
+                </button>
+                {/* Note: A full draw offer feature requires more server logic (offer, accept, decline) */}
+                <button className="ingame-btn draw" disabled title="Draw offer feature coming soon!">
+                  🤝 Offer Draw
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="chess-board-wrapper">
@@ -281,44 +257,6 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
               <button onClick={handlePlayAgain} className="reset-btn">Play Again</button>
             </div>
           )}
-          {!gameState.isGameOver && phase === 'playing' && (
-            <div className="game-actions">
-              <button onClick={onResign} className="resign-btn">
-                🏳️ Resign
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="chat-container">
-          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#333', textAlign: 'center' }}>💬 Live Chat</h3>
-          <div className="chat-messages">
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={`chat-message ${msg.sender === playerSymbol ? 'self' : 'opponent'}`}>
-                <span className="chat-sender">
-                  {getEmoji(msg.sender)}
-                  {msg.timestamp && <span className="chat-timestamp">{msg.timestamp}</span>}
-                </span>
-                <span className="chat-text">{msg.message}</span>
-              </div>
-            ))}
-            {isOpponentTyping && (
-              <div className="chat-message opponent typing-indicator">
-                <span className="chat-sender">{getEmoji(playerSymbol === 'w' ? 'b' : 'w')}</span>
-                <span className="chat-text">typing...</span>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-          <div className="chat-controls">
-            {QUICK_EMOJIS.map((e) => (
-              <button key={e} className="emoji-btn" onClick={() => sendMessage(e)}>{e}</button>
-            ))}
-          </div>
-          <form onSubmit={handleChatSubmit} className="chat-form">
-            <input type="text" className="chat-input" placeholder="Type a message..." value={currentMessage} onChange={handleChatChange} maxLength="50" />
-            <button type="submit" className="send-btn">Send</button>
-          </form>
         </div>
         {promotionData && (
           <div className="promotion-overlay">

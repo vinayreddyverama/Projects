@@ -65,6 +65,7 @@ function findOrCreateGame(socketId, playerName, gameType, requestedGameId) {
   const game = gameType === 'connect4' ? new Connect4Game(gameId) : 
                gameType === 'sequence' ? new SequenceGame(gameId) : 
                gameType === 'chess' ? new ChessGame(gameId) :
+               gameType === 'summary' ? { type: 'summary', players: {}, addPlayer: function(id, name) { this.players[id] = {name}; return 'spectator'; }, isReady: () => false } :
                new Game(gameId);
   const symbol = game.addPlayer(socketId, playerName);
   games.set(gameId, game);
@@ -164,8 +165,9 @@ module.exports = (io) => {
       const playerSymbol = playerSymbols.find(sym => game.players[sym]?.id === socket.id);
 
       if (playerSymbol) {
+        const playerName = game.players[playerSymbol]?.name || 'Player';
         const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        io.to(`game-${gameId}`).emit('receiveMessage', { sender: playerSymbol, message, timestamp });
+        io.to(`game-${gameId}`).emit('receiveMessage', { sender: playerSymbol, senderName: playerName, message, timestamp });
       }
     });
 

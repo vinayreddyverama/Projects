@@ -1,6 +1,7 @@
 .app-wrapper {
   display: flex;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -146,15 +147,22 @@
   margin: 8px 0;
   font-size: 1.1em;
 }
-
+.content-wrapper {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  padding: 20px;
+  min-width: 0; /* Prevents flex items from overflowing */
+}
 .main-content {
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Align to top for better layout consistency */
   /* Gradient from existing App.css matches this automatically, 
      so transparent lets it show through */
   background: transparent;
+  min-width: 0;
 }
 
 @keyframes summaryPopIn {
@@ -163,10 +171,73 @@
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* ==================== GLOBAL CHAT SIDEBAR ==================== */
+.chat-container {
+  flex-shrink: 0;
+  width: 320px;
+  background: #1e1e2d; /* Modern dark background */
+  color: #e4e4e7;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.5s ease-out;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  margin-bottom: 15px;
+  background: #2a2a40;
+  border-radius: 8px;
+}
+
+.chat-message {
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 90%;
+  word-wrap: break-word;
+  line-height: 1.4;
+  font-size: 0.9em;
+}
+
+.chat-message.self { background: #667eea; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+.chat-message.opponent { background: #3f3f5a; color: #d4d4d8; align-self: flex-start; border-bottom-left-radius: 2px; }
+
+.chat-sender { display: flex; justify-content: space-between; font-size: 0.8em; font-weight: 600; margin-bottom: 4px; opacity: 0.8; }
+.chat-timestamp { font-weight: 400; opacity: 0.7; margin-left: 8px; }
+
+.chat-controls { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 15px; }
+.emoji-btn { background: #3f3f5a; border: none; border-radius: 8px; font-size: 1.4em; padding: 8px; cursor: pointer; transition: all 0.2s ease; color: white; }
+.emoji-btn:hover { background: #4a4a6e; transform: scale(1.1); }
+
+.chat-form { display: flex; gap: 8px; }
+.chat-input { flex: 1; padding: 10px 14px; border: 1px solid #45456b; background: #2a2a40; color: white; border-radius: 8px; font-size: 0.95em; }
+.send-btn { padding: 10px 18px; font-weight: bold; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; }
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ==================== RESPONSIVE LAYOUT ==================== */
 @media (max-width: 900px) {
   .app-wrapper {
     flex-direction: column;
+  }
+  .content-wrapper {
+    flex-direction: column;
+    padding: 15px;
+  }
+  .chat-container {
+    width: 100%;
+    max-width: 100%;
+    height: 450px;
+    order: 2; /* Place chat below the game on mobile */
+  }
+  .main-content {
+    order: 1;
   }
 
   .sidebar {

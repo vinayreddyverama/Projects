@@ -104,6 +104,34 @@
   user-select: none; /* Standard syntax */
 }
 
+.captured-pieces-wrapper {
+  min-height: 2em; /* Reserve space so the card doesn't jump in size */
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.captured-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.material-advantage {
+  font-size: 0.9em;
+  font-weight: bold;
+  color: #2ecc71;
+  opacity: 0.9;
+}
+
+.captured-piece {
+  font-size: 0.9em;
+  opacity: 0.8;
+  line-height: 1;
+}
+
 .ingame-actions {
   display: flex;
   justify-content: center;

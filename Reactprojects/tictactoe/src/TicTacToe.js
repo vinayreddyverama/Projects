@@ -5,7 +5,7 @@ import { useSocket } from './useSocket';
 
 const QUICK_EMOJIS = ['😂', '😎', '😢', '😡', '👍', '🎉'];
 
-const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef, onResign }) => {
+const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMusic, onOpponentLeft, setLockedGameType, activeSocketRef }) => {
   const {
     socket, phase, setPhase, gameState, playerSymbol, gameId, status,
     opponentName, chatMessages, isOpponentTyping, getEmoji
@@ -109,9 +109,14 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
     }
   };
 
+  const handleResign = () => {
+    if (socket && window.confirm('Are you sure you want to resign?')) {
+      socket.emit('resignGame');
+    }
+  };
+
   const handlePlayAgain = () => {
     socket.emit('gameReset');
-    setPhase('playing');
   };
 
   if (phase === 'nameInput') {
@@ -234,7 +239,7 @@ const TicTacToe = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPla
         )}
         {!gameState.winner && phase === 'playing' && (
           <div className="game-actions">
-            <button onClick={onResign} className="resign-btn">
+            <button onClick={handleResign} className="resign-btn">
               🏳️ Resign
             </button>
           </div>

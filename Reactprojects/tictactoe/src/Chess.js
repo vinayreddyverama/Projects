@@ -118,7 +118,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
   };
 
   const handleSquareClick = (r, c) => {
-    if (!gameState || gameState.turn !== playerSymbol || gameState.isGameOver) return;
+    if (!gameState || gameState.turn !== playerSymbol || gameState.winner) return;
 
     const squareName = String.fromCharCode(97 + c) + (8 - r);
     const piece = board[r][c];
@@ -128,6 +128,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
       // If the clicked square is a valid move, make the move
       if (possibleMoves.includes(squareName)) {
         const fromPiece = chess.get(selectedSquare);
+        if (!fromPiece) return; // Defensive check
         const isPromotion = fromPiece.type === 'p' && (squareName[1] === '8' || squareName[1] === '1');
 
         if (isPromotion) {
@@ -220,7 +221,6 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
 
   const handlePlayAgain = () => {
     socket.emit('gameReset');
-    setPhase('playing');
   };
 
   if (phase === 'nameInput') {
@@ -251,6 +251,9 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     );
   }
 
+  const capturedPieces = gameState?.capturedPieces || { w: [], b: [] };
+  const materialAdvantage = gameState?.materialAdvantage || 0;
+
   return (
     <div className="container chess-container">
       <div className="game-layout">
@@ -266,6 +269,13 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
                   <div>🤝 Draws: {gameState.players[playerSymbol]?.score?.draws || 0}</div>
                   <div>❌ Losses: {gameState.players[playerSymbol]?.score?.losses || 0}</div>
                 </div>
+                <div className="captured-pieces-wrapper">
+                  <div className="captured-pieces">
+                    {capturedPieces[playerSymbol]?.map((p, i) => <span key={i} className="captured-piece">{pieceMap[p]}</span>)}
+                  </div>
+                  {playerSymbol === 'w' && materialAdvantage > 0 && <span className="material-advantage">+{materialAdvantage}</span>}
+                  {playerSymbol === 'b' && materialAdvantage < 0 && <span className="material-advantage">+{Math.abs(materialAdvantage)}</span>}
+                </div>
                 <p className="player-turn">{gameState.turn === playerSymbol ? 'Your Turn' : '⚫'}</p>
               </div>
               <div className="player-card opponent">
@@ -276,6 +286,13 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
                   <div>🤝 Draws: {gameState.players[playerSymbol === 'w' ? 'b' : 'w']?.score?.draws || 0}</div>
                   <div>❌ Losses: {gameState.players[playerSymbol === 'w' ? 'b' : 'w']?.score?.losses || 0}</div>
                 </div>
+                <div className="captured-pieces-wrapper">
+                  <div className="captured-pieces">
+                    {capturedPieces[playerSymbol === 'w' ? 'b' : 'w']?.map((p, i) => <span key={i} className="captured-piece">{pieceMap[p]}</span>)}
+                  </div>
+                  {playerSymbol === 'b' && materialAdvantage > 0 && <span className="material-advantage">+{materialAdvantage}</span>}
+                  {playerSymbol === 'w' && materialAdvantage < 0 && <span className="material-advantage">+{Math.abs(materialAdvantage)}</span>}
+                </div>
                 <p className="player-turn">{gameState.turn !== playerSymbol ? 'Their Turn' : '⚫'}</p>
               </div>
             </div>
@@ -283,7 +300,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
               <p className="status-text">{status}</p>
               <p className="room-info">Game #{gameId}</p>
             </div>
-            {!gameState.isGameOver && phase === 'playing' && (
+            {!gameState.winner && phase === 'playing' && (
               <div className="ingame-actions">
                 <button onClick={handleResign} className="ingame-btn resign">
                   🏳️ Resign
@@ -301,7 +318,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
                   <button 
                     onClick={handleOfferDraw} 
                     className="ingame-btn draw" 
-                    disabled={drawOfferFrom !== null || gameState.turn !== playerSymbol}
+                    disabled={drawOfferFrom !== null}
                   >
                     {drawOfferFrom === playerSymbol ? 'Draw Offered' : '🤝 Offer Draw'}
                   </button>
@@ -339,7 +356,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
             </div>
           </div>
 
-          {gameState.isGameOver && (
+          {gameState.winner && (
             <div className="reset-section">
               <button onClick={handlePlayAgain} className="reset-btn">Play Again</button>
             </div>

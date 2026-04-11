@@ -8,6 +8,8 @@ class ChessGame {
     this.players = { w: null, b: null }; // w for white, b for black
     this.winner = null; // 'w', 'b', or 'draw'
     this.drawOffer = null; // Tracks which player ('w' or 'b') has offered a draw
+    this.capturedPieces = { w: [], b: [] };
+    this.materialAdvantage = 0;
   }
 
   addPlayer(socketId, name) {
@@ -54,6 +56,8 @@ class ChessGame {
       // Any valid move voids a previous draw offer.
       this.drawOffer = null;
 
+      this._updateCapturedState();
+
       this.checkGameOver();
       return true;
     } catch (e) {
@@ -91,6 +95,49 @@ class ChessGame {
     this.chess.reset();
     this.winner = null;
     this.drawOffer = null;
+    this._updateCapturedState();
+  }
+
+  _updateCapturedState() {
+    const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+    const currentBoard = this.chess.board().flat().filter(p => p);
+
+    const captured = { w: [], b: [] }; // w: pieces captured by white, b: pieces captured by black
+    let advantage = 0;
+
+    const initialCounts = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+    const currentCounts = { w: { ...initialCounts }, b: { ...initialCounts } };
+
+    // Decrement counts for pieces still on the board
+    for (const piece of currentBoard) {
+      currentCounts[piece.color][piece.type]--;
+    }
+
+    // The remaining counts are the captured pieces
+    for (const color of ['w', 'b']) {
+      for (const type of ['p', 'n', 'b', 'r', 'q']) {
+        const numCaptured = currentCounts[color][type];
+        if (numCaptured > 0) {
+          const pieceSymbol = color === 'w' ? type : type.toUpperCase();
+          for (let i = 0; i < numCaptured; i++) {
+            const capturer = color === 'w' ? 'b' : 'w';
+            captured[capturer].push(pieceSymbol);
+          }
+        }
+      }
+    }
+
+    // Calculate material advantage
+    let whiteMaterial = 0;
+    let blackMaterial = 0;
+    currentBoard.forEach(p => {
+      if (p.color === 'w') whiteMaterial += pieceValues[p.type];
+      else blackMaterial += pieceValues[p.type];
+    });
+    advantage = whiteMaterial - blackMaterial;
+
+    this.capturedPieces = captured;
+    this.materialAdvantage = advantage;
   }
 
   getState() {
@@ -104,6 +151,8 @@ class ChessGame {
       players: this.players,
       winner: this.winner,
       drawOffer: this.drawOffer,
+      capturedPieces: this.capturedPieces,
+      materialAdvantage: this.materialAdvantage,
       gameId: this.id,
       type: this.type,
     };

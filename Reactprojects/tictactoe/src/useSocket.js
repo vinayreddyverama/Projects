@@ -94,6 +94,11 @@ export const useSocket = (gameType, onScoreUpdate, onOpponentLeft, activeSocketR
     newSocket.on('gameUpdate', (state) => {
       if (isMounted) {
         setDisconnectCountdown(null);
+        // If we receive an update and the game is not over, we must be in the 'playing' phase.
+        // This handles the case where one player resets the game and the other needs to be updated.
+        if (!state.winner) {
+          setPhase('playing');
+        }
         setGameState(state);
         const mySymbol = Object.keys(state.players).find(key => state.players[key]?.id === newSocket.id);
         const oppSymbol = Object.keys(state.players).find(key => state.players[key]?.id !== newSocket.id);

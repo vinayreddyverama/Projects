@@ -86,7 +86,8 @@ class Logger {
   }
 
   playerMove(gameId, player, position) {
-    this.info(`🎯 Game ${gameId}: ${player} moved to position ${position}`);
+    const posStr = typeof position === 'object' ? JSON.stringify(position) : position;
+    this.info(`🎯 Game ${gameId}: ${player} moved to position ${posStr}`);
   }
 
   playerDisconnect(playerName, gameId) {

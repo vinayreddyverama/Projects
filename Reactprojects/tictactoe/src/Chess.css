@@ -233,3 +233,49 @@
   transform: scale(1.1);
   background: #e4c8a0;
 }
+
+.move-history {
+  margin-top: 20px;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.move-history h4 {
+  margin: 0 0 10px 0;
+  font-size: 1rem;
+  color: #333;
+  text-align: center;
+}
+
+.move-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.move-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 1fr;
+  align-items: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.move-row:nth-child(odd) {
+  background: #fff;
+}
+
+.move-number {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.move-white, .move-black {
+  color: #212529;
+  font-family: monospace;
+}

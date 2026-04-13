@@ -5,26 +5,26 @@ class ChessGame {
     this.id = id;
     this.type = 'chess';
     this.chess = new Chess();
-    this.players = { w: null, b: null }; // w for white, b for black
-    this.winner = null; // 'w', 'b', or 'draw'
-    this.drawOffer = null; // Tracks which player ('w' or 'b') has offered a draw
+    this.players = { w: null, b: null };
+    this.winner = null;
+    this.drawOffer = null;
     this.capturedPieces = { w: [], b: [] };
     this.materialAdvantage = 0;
   }
 
   addPlayer(socketId, name) {
     const initialScore = { wins: 0, losses: 0, draws: 0, total: 0 };
-
+    
     if ((this.players.w && this.players.w.name.toLowerCase() === name.toLowerCase()) || 
         (this.players.b && this.players.b.name.toLowerCase() === name.toLowerCase())) {
       return null;
     }
 
     if (!this.players.w) {
-      this.players.w = { id: socketId, name, score: { ...initialScore } };
+      this.players.w = { id: socketId, name, score: { ...initialScore }, disconnected: false };
       return 'w';
     } else if (!this.players.b) {
-      this.players.b = { id: socketId, name, score: { ...initialScore } };
+      this.players.b = { id: socketId, name, score: { ...initialScore }, disconnected: false };
       return 'b';
     }
     return null;
@@ -44,35 +44,64 @@ class ChessGame {
     return null;
   }
 
-  makeMove(move, symbol) {
-    if (this.winner || this.chess.turn() !== symbol) {
-      return false;
-    }
+  makeMove(moveObj, symbol) {
+    if (this.winner) return false;
+    if (this.chess.turn() !== symbol) return false;
 
     try {
-      const result = this.chess.move(move);
-      if (result === null) return false; // Invalid move
-
-      // Any valid move voids a previous draw offer.
-      this.drawOffer = null;
-
-      this._updateCapturedState();
-
-      this.checkGameOver();
-      return true;
+      const move = this.chess.move(moveObj);
+      if (!move) return false;
     } catch (e) {
-      return false; // chess.js throws an error for invalid moves
+      return false; // Invalid move
+    }
+
+    this.checkWinner(symbol);
+    this.calculateStats();
+
+    if (this.winner) {
+      this.updateScores();
+    }
+
+    this.drawOffer = null;
+
+    return true;
+  }
+
+  calculateStats() {
+    const values = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+    const initialCounts = { p: 8, n: 2, b: 2, r: 2, q: 1 };
+    const currentCounts = { w: { p: 0, n: 0, b: 0, r: 0, q: 0 }, b: { p: 0, n: 0, b: 0, r: 0, q: 0 } };
+    let wScore = 0;
+    let bScore = 0;
+
+    const board = this.chess.board();
+    for (let row of board) {
+      for (let square of row) {
+        if (square && currentCounts[square.color] && currentCounts[square.color][square.type] !== undefined) {
+          currentCounts[square.color][square.type]++;
+          if (square.color === 'w') wScore += values[square.type];
+          else bScore += values[square.type];
+        }
+      }
+    }
+
+    this.materialAdvantage = wScore - bScore;
+
+    this.capturedPieces = { w: [], b: [] };
+    for (const type of Object.keys(initialCounts)) {
+      const missingBlack = Math.max(0, initialCounts[type] - currentCounts.b[type]);
+      for (let i = 0; i < missingBlack; i++) this.capturedPieces.w.push(type);
+
+      const missingWhite = Math.max(0, initialCounts[type] - currentCounts.w[type]);
+      for (let i = 0; i < missingWhite; i++) this.capturedPieces.b.push(type);
     }
   }
 
-  checkGameOver() {
-    if (this.chess.isGameOver()) {
-      if (this.chess.isCheckmate()) {
-        this.winner = this.chess.turn() === 'w' ? 'b' : 'w'; // The player whose turn it is has been checkmated
-      } else {
-        this.winner = 'draw'; // Stalemate, three-fold repetition, etc.
-      }
-      this.updateScores();
+  checkWinner(lastMoveSymbol) {
+    if (this.chess.isCheckmate()) {
+      this.winner = lastMoveSymbol;
+    } else if (this.chess.isDraw() || this.chess.isStalemate() || this.chess.isThreefoldRepetition() || this.chess.isInsufficientMaterial()) {
+      this.winner = 'draw';
     }
   }
 
@@ -95,71 +124,26 @@ class ChessGame {
     this.chess.reset();
     this.winner = null;
     this.drawOffer = null;
-    this._updateCapturedState();
-  }
-
-  _updateCapturedState() {
-    const pieceValues = { p: 1, n: 3, b: 3, r: 5, q: 9 };
-    const currentBoard = this.chess.board().flat().filter(p => p);
-
-    const captured = { w: [], b: [] }; // w: pieces captured by white, b: pieces captured by black
-    let advantage = 0;
-
-    const initialCounts = { p: 8, n: 2, b: 2, r: 2, q: 1 };
-    const currentCounts = { w: { ...initialCounts }, b: { ...initialCounts } };
-
-    // Decrement counts for pieces still on the board
-    for (const piece of currentBoard) {
-      currentCounts[piece.color][piece.type]--;
-    }
-
-    // The remaining counts are the captured pieces
-    for (const color of ['w', 'b']) {
-      for (const type of ['p', 'n', 'b', 'r', 'q']) {
-        const numCaptured = currentCounts[color][type];
-        if (numCaptured > 0) {
-          const pieceSymbol = color === 'w' ? type : type.toUpperCase();
-          for (let i = 0; i < numCaptured; i++) {
-            const capturer = color === 'w' ? 'b' : 'w';
-            captured[capturer].push(pieceSymbol);
-          }
-        }
-      }
-    }
-
-    // Calculate material advantage
-    let whiteMaterial = 0;
-    let blackMaterial = 0;
-    currentBoard.forEach(p => {
-      if (p.color === 'w') whiteMaterial += pieceValues[p.type];
-      else blackMaterial += pieceValues[p.type];
-    });
-    advantage = whiteMaterial - blackMaterial;
-
-    this.capturedPieces = captured;
-    this.materialAdvantage = advantage;
+    this.calculateStats();
   }
 
   getState() {
     return {
       fen: this.chess.fen(),
-      history: this.chess.history({ verbose: true }),
-      isGameOver: this.chess.isGameOver(),
-      isCheckmate: this.chess.isCheckmate(),
-      isDraw: this.chess.isDraw(),
       turn: this.chess.turn(),
       players: this.players,
       winner: this.winner,
-      drawOffer: this.drawOffer,
-      capturedPieces: this.capturedPieces,
-      materialAdvantage: this.materialAdvantage,
       gameId: this.id,
       type: this.type,
+      history: this.chess.history({ verbose: true }),
+      capturedPieces: this.capturedPieces,
+      materialAdvantage: this.materialAdvantage,
+      drawOffer: this.drawOffer
     };
   }
 
   isReady() {
-    return this.players.w && !this.players.w.disconnected && this.players.b && !this.players.b.disconnected;
+    return !!(this.players.w && !this.players.w.disconnected && this.players.b && !this.players.b.disconnected);
   }
 }
 

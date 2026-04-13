@@ -114,9 +114,12 @@ function App() {
   };
 
   const playCelebrationSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); // Crowd cheering
-    audio.volume = 0.6;
-    audio.play().catch(() => {});
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'); // Crowd cheering
+      audio.volume = 0.6;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) playPromise.catch(e => console.warn("Audio error:", e));
+    } catch(e) {}
   };
 
   const handleEndSession = (reason = 'end') => {

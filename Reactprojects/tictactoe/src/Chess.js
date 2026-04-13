@@ -48,7 +48,8 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
         const boardRow = [];
         for (const char of row) {
           if (isNaN(char)) {
-            boardRow.push({ type: char, color: char === char.toUpperCase() ? 'b' : 'w' });
+            const isWhite = char === char.toUpperCase();
+            boardRow.push({ type: char.toLowerCase(), color: isWhite ? 'w' : 'b' });
           } else {
             for (let i = 0; i < parseInt(char, 10); i++) {
               boardRow.push(null);
@@ -82,9 +83,42 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
     setDrawOfferFrom(gameState?.drawOffer || null);
   }, [gameState, chess]);
 
-  const playSendSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3').play();
-  const playReceiveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3').play();
-  const playMoveSound = () => new Audio('https://assets.mixkit.co/active_storage/sfx/1648/1648-preview.mp3').play(); // A nice piece-placing sound
+  const playSendSound = () => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3');
+      audio.volume = 0.4;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn("Audio playback failed:", error);
+        });
+      }
+    } catch (e) {}
+  };
+  const playReceiveSound = () => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+      audio.volume = 0.5;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn("Audio playback failed:", error);
+        });
+      }
+    } catch (e) {}
+  };
+  const playMoveSound = () => {
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1648/1648-preview.mp3');
+      audio.volume = 0.5;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn("Audio playback failed:", error);
+        });
+      }
+    } catch (e) {}
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -271,7 +305,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
                 </div>
                 <div className="captured-pieces-wrapper">
                   <div className="captured-pieces">
-                    {capturedPieces[playerSymbol]?.map((p, i) => <span key={i} className="captured-piece">{pieceMap[p]}</span>)}
+                    {capturedPieces[playerSymbol]?.map((p, i) => <span key={i} className="captured-piece">{pieceMap[playerSymbol === 'w' ? p.toUpperCase() : p.toLowerCase()]}</span>)}
                   </div>
                   {playerSymbol === 'w' && materialAdvantage > 0 && <span className="material-advantage">+{materialAdvantage}</span>}
                   {playerSymbol === 'b' && materialAdvantage < 0 && <span className="material-advantage">+{Math.abs(materialAdvantage)}</span>}
@@ -288,7 +322,7 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
                 </div>
                 <div className="captured-pieces-wrapper">
                   <div className="captured-pieces">
-                    {capturedPieces[playerSymbol === 'w' ? 'b' : 'w']?.map((p, i) => <span key={i} className="captured-piece">{pieceMap[p]}</span>)}
+                    {capturedPieces[playerSymbol === 'w' ? 'b' : 'w']?.map((p, i) => <span key={i} className="captured-piece">{pieceMap[playerSymbol === 'w' ? p.toLowerCase() : p.toUpperCase()]}</span>)}
                   </div>
                   {playerSymbol === 'b' && materialAdvantage > 0 && <span className="material-advantage">+{materialAdvantage}</span>}
                   {playerSymbol === 'w' && materialAdvantage < 0 && <span className="material-advantage">+{Math.abs(materialAdvantage)}</span>}
@@ -300,6 +334,24 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
               <p className="status-text">{status}</p>
               <p className="room-info">Game #{gameId}</p>
             </div>
+            
+            {gameState.history && gameState.history.length > 0 && (
+              <div className="move-history">
+                <h4>Move History</h4>
+                <div className="move-list">
+                  {gameState.history.map((move, i) => (
+                    i % 2 === 0 ? 
+                      <div key={i} className="move-row">
+                        <span className="move-number">{Math.floor(i/2) + 1}.</span>
+                        <span className="move-white">{move.san}</span>
+                        <span className="move-black">{gameState.history[i+1] ? gameState.history[i+1].san : ''}</span>
+                      </div>
+                    : null
+                  ))}
+                </div>
+              </div>
+            )}
+
             {!gameState.winner && phase === 'playing' && (
               <div className="ingame-actions">
                 <button onClick={handleResign} className="ingame-btn resign">
@@ -343,9 +395,9 @@ const Chess = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlayMus
                       `}
                       onClick={() => handleSquareClick(rIndex, cIndex)}
                     >
-                      {cIndex === 0 && <span className="rank-label">{8 - rIndex}</span>}
-                      {rIndex === 7 && <span className="file-label">{String.fromCharCode(97 + cIndex)}</span>}
-                      {piece && <span className="chess-piece">{pieceMap[piece.type]}</span>}
+                      {(playerSymbol === 'b' ? cIndex === 7 : cIndex === 0) && <span className="rank-label">{8 - rIndex}</span>}
+                      {(playerSymbol === 'b' ? rIndex === 0 : rIndex === 7) && <span className="file-label">{String.fromCharCode(97 + cIndex)}</span>}
+                      {piece && <span className="chess-piece">{pieceMap[piece.color === 'w' ? piece.type.toLowerCase() : piece.type.toUpperCase()]}</span>}
                       {possibleMoves.includes(squareName) && (
                         <div className="possible-move-dot" />
                       )}

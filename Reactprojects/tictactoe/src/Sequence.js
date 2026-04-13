@@ -19,21 +19,30 @@ const Sequence = ({ onScoreUpdate, globalPlayerName, setGlobalPlayerName, onPlay
   const hasAutoJoined = useRef(false);
 
   const playSendSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3');
-    audio.volume = 0.4;
-    audio.play().catch(() => {});
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/3005/3005-preview.mp3');
+      audio.volume = 0.4;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) playPromise.catch(e => console.warn("Audio error:", e));
+    } catch(e) {}
   };
 
   const playReceiveSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3');
+      audio.volume = 0.5;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) playPromise.catch(e => console.warn("Audio error:", e));
+    } catch(e) {}
   };
 
   const playMoveSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    audio.volume = 0.5;
-    audio.play().catch(() => {});
+    try {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+      audio.volume = 0.5;
+      const playPromise = audio.play();
+      if (playPromise !== undefined) playPromise.catch(e => console.warn("Audio error:", e));
+    } catch(e) {}
   };
 
   useEffect(() => {

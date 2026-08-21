@@ -11,6 +11,7 @@ from utility_analytics.common import GOLD_DIR, write_frame
 
 def build_gold_analytics(
     customers: pl.DataFrame,
+    meters: pl.DataFrame,
     readings: pl.DataFrame,
     billing: pl.DataFrame,
     reconciliation: pl.DataFrame,
@@ -22,17 +23,24 @@ def build_gold_analytics(
     gold_dir = output_dir or GOLD_DIR
     gold_dir.mkdir(parents=True, exist_ok=True)
 
-    monthly = readings.with_columns(pl.col("canonical_reading_date").str.slice(0, 7).alias("billing_period")).group_by(
-        ["canonical_customer_id", "billing_period"]
+    meter_regions = meters.select("canonical_meter_id", "normalized_region").group_by(
+        "canonical_meter_id"
+    ).agg(pl.col("normalized_region").drop_nulls().first().alias("meter_region"))
+    monthly = readings.join(meter_regions, on="canonical_meter_id", how="left").with_columns(
+        pl.col("canonical_reading_date").str.slice(0, 7).alias("billing_period")
+    ).group_by(
+        ["canonical_customer_id", "billing_period", "meter_region"]
     ).agg(pl.col("consumption_kwh").sum().alias("consumption_kwh"))
     monthly = monthly.join(
         customers.select("canonical_customer_id", "normalized_location", "customer_category"),
         on="canonical_customer_id",
         how="left",
     ).with_columns(
-        pl.col("normalized_location").fill_null("UNKNOWN"),
+        pl.coalesce([pl.col("normalized_location"), pl.col("meter_region"), pl.lit("UNKNOWN")]).alias(
+            "normalized_location"
+        ),
         pl.col("customer_category").fill_null("UNKNOWN"),
-    )
+    ).drop("meter_region")
 
     region_consumption = monthly.group_by("normalized_location").agg(pl.col("consumption_kwh").sum().alias("total_consumption_kwh")).sort(
         "total_consumption_kwh", descending=True

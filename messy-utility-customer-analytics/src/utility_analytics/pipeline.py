@@ -74,6 +74,7 @@ def run_pipeline(seed: int = 42) -> dict[str, object]:
 
     outputs = build_gold_analytics(
         normalized["customers"],
+        normalized["meters"],
         normalized["meter_readings"],
         normalized["billing"],
         reconciliation,

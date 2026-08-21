@@ -10,7 +10,7 @@ Open-source, on-premises analytics platform for messy utility data. The project 
 6. Identify the top 20 potentially anomalous customers.
 
 ## Dashboard
-Messy Utility Customer & Consumption Analytics(https://projects-toxcshhbdobmhmbpvcwxnt.streamlit.app/)
+Messy Utility Customer & Consumption Analytics Dashboard (https://projects-toxcshhbdobmhmbpvcwxnt.streamlit.app/)
 
 ## Recommended build order
 

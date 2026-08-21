@@ -1,0 +1,19 @@
+sources:
+  customers:
+    format: csv
+    path: data/raw/customers.csv
+  meters:
+    format: csv
+    path: data/raw/meters.csv
+  meter_readings:
+    format: csv
+    path: data/raw/meter_readings.csv
+  billing:
+    format: csv
+    path: data/raw/billing.csv
+  service_requests:
+    format: json
+    path: data/raw/service_requests.json
+  tariffs:
+    format: xlsx
+    path: data/raw/tariffs.xlsx

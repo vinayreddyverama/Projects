@@ -1,0 +1,11 @@
+polars>=1.0.0
+duckdb>=1.0.0
+streamlit>=1.37.0
+faker>=30.0.0
+scikit-learn>=1.5.0
+pyyaml>=6.0.0
+pytest>=8.0.0
+ruff>=0.6.0
+pillow>=10.0.0
+pytesseract>=0.3.10
+openpyxl>=3.1.0

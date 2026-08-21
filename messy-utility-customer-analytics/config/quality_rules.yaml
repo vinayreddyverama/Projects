@@ -1,0 +1,16 @@
+rules:
+  - id: DQ001
+    name: customer_id_required
+    severity: critical
+  - id: DQ002
+    name: meter_id_exists
+    severity: critical
+  - id: DQ003
+    name: reading_not_negative
+    severity: high
+  - id: DQ004
+    name: duplicate_reading
+    severity: medium
+  - id: DQ005
+    name: valid_timestamp
+    severity: high

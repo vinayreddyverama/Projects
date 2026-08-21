@@ -1,0 +1,12 @@
+{
+  "raw_dir": "/Users/veramareddy/Documents/GitHub/Projects/messy-utility-customer-analytics/data/raw",
+  "bronze_dir": "/Users/veramareddy/Documents/GitHub/Projects/messy-utility-customer-analytics/data/bronze",
+  "silver_dir": "/Users/veramareddy/Documents/GitHub/Projects/messy-utility-customer-analytics/data/silver",
+  "gold_dir": "/Users/veramareddy/Documents/GitHub/Projects/messy-utility-customer-analytics/data/gold",
+  "quarantine_dir": "/Users/veramareddy/Documents/GitHub/Projects/messy-utility-customer-analytics/data/quarantine",
+  "quality_issues": 220590,
+  "unreconciled_bills": 98249,
+  "anomalous_customers": 1584,
+  "seed": 42,
+  "completed_at": "2026-08-21T08:04:00.029926+00:00"
+}

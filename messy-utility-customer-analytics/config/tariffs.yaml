@@ -1,0 +1,7 @@
+tariffs:
+  - tariff_id: T001
+    customer_category: RESIDENTIAL
+    region: NORTH
+    energy_rate: 6.5
+    fixed_charge: 50
+    tax_rate: 0.18
